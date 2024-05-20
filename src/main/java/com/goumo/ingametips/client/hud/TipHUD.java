@@ -69,11 +69,11 @@ public class TipHUD implements IGuiOverlay {
 
         //文本超出窗口时调整尺寸
         if ((descLines + titleLines+1)*lineSpace + renderPos1.Y > mainWindow.Y) {
-            if (descLines >= getCurElement().contents.size() && renderPos1.Y > 40) {
+            if (descLines >= getCurElement().components.size() && renderPos1.Y > 40) {
                 extendedHeight += 24;
 
             } else if ((descLines + titleLines+1)*lineSpace + renderPos1.Y > mainWindow.Y) {
-                if (descLines >= getCurElement().contents.size() && renderPos1.X > mainWindow.X * 0.5) {
+                if (descLines >= getCurElement().components.size() && renderPos1.X > mainWindow.X * 0.5) {
                     extendedWidth += 24;
                 } else {
                     GuiUtil.drawWrapString(I18n.get("tip." + IngameTips.MOD_ID + ".too_long"), graphics, mc.font,
@@ -106,7 +106,7 @@ public class TipHUD implements IGuiOverlay {
             }
         }
 
-        int BGColor = (int)(BGAlpha * 255.0F) << 24 | getCurElement().BGColor & 0x00FFFFFF;
+        int BGColor = (int)(BGAlpha * 255.0F) << 24 | getCurElement().bgColor & 0x00FFFFFF;
         int fontColor = (int)(fontAlpha * 255.0F) << 24 | getCurElement().fontColor & 0x00FFFFFF;
         float yaw = 0;
         float pitch = 0;
@@ -127,7 +127,7 @@ public class TipHUD implements IGuiOverlay {
         ps.pushPose();
         ps.translate(-yaw*0.1F + fadeProgress*16 - 16, -pitch*0.1F, 1000);
 
-        renderContent(getCurElement().contents, graphics, renderPos1, fontColor, renderPos2, BGColor);
+        renderContent(getCurElement().components, graphics, renderPos1, fontColor, renderPos2, BGColor);
 
         renderButton(graphics, renderPos2.X - 13, renderPos1.Y-1, fontColor);
 

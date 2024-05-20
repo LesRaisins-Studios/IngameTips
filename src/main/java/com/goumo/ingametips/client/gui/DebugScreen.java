@@ -14,10 +14,7 @@ public class DebugScreen extends Screen {
 
     @Override
     protected void init() {
-        this.addRenderableWidget(new IconButton((int) (this.width*0.5-25), (int) (this.height*0.4), IconButton.ICON_TRASH_CAN, 0xFFC6FCFF, Component.translatable("tip.gui.clear_cache"), (b) -> {
-            TipDisplayUtil.clearCache();
-        }));
-        this.addRenderableWidget(new IconButton((int) (this.width*0.5-5), (int) (this.height*0.4), IconButton.ICON_CROSS, 0xFFC6FCFF, Component.translatable("tip.gui.clear_queue"), (b) -> {
+        this.addRenderableWidget(new IconButton((int) (this.width*0.5-25), (int) (this.height*0.4), IconButton.ICON_CROSS, 0xFFC6FCFF, Component.translatable("tip.gui.clear_queue"), (b) -> {
             TipDisplayUtil.clearRenderQueue();
         }));
         this.addRenderableWidget(new IconButton((int) (this.width*0.5+15), (int) (this.height*0.4), IconButton.ICON_HISTORY, 0xFFFF5340, Component.translatable("tip.gui.reset_unlock"), (b) -> {

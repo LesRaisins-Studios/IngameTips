@@ -1,37 +1,34 @@
 package com.goumo.ingametips.client.util;
 
 import com.goumo.ingametips.client.TipElement;
+import com.goumo.ingametips.client.resource.TipElementManager;
 import com.goumo.ingametips.client.UnlockedTipManager;
 import com.goumo.ingametips.client.gui.DebugScreen;
 import com.goumo.ingametips.client.hud.TipHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-
-import java.util.HashMap;
-import java.util.Map;
+import net.minecraft.resources.ResourceLocation;
 
 public class TipDisplayUtil {
-    private static final Map<String, TipElement> CACHE = new HashMap<>();
-
-    public static void displayTip(String ID, boolean first) {
-        displayTip(getTipEle(ID), first);
+    public static void displayTip(ResourceLocation rl, boolean first) {
+        displayTip(TipElementManager.getElement(rl), first);
     }
 
     public static void displayTip(TipElement element, boolean first) {
-        if (element.ID.isEmpty()) return;
-        if (element.onceOnly && UnlockedTipManager.manager.isUnlocked(element.ID)) return;
+        if (element.id==null) return;
+        if (element.onceOnly && UnlockedTipManager.manager.isUnlocked(element.id)) return;
 
         for (TipElement ele : TipHUD.renderQueue) {
-            if (ele.ID.equals(element.ID)) {
+            if (ele.id.equals(element.id)) {
                 return;
             }
         }
 
         if (element.history) {
-            if (element.ID.startsWith("*custom*")) {
+            if (element.id.getNamespace().equals("ingametips_custom")) {
                 UnlockedTipManager.manager.unlockCustom(element);
             } else {
-                UnlockedTipManager.manager.unlock(element.ID, element.hide);
+                UnlockedTipManager.manager.unlock(element.id, element.hide);
             }
         }
 
@@ -44,12 +41,12 @@ public class TipDisplayUtil {
 
     public static void displayCustomTip(String title, String content, int visibleTime, boolean history) {
         TipElement ele = new TipElement();
-        ele.ID = "*custom*" + title;
+        ele.id = ResourceLocation.tryParse("ingametips_custom:" + title);
         ele.history = history;
-        ele.contents.add(Component.literal(title));
+        ele.components.add(Component.literal(title));
         String[] contents = content.split("\\$");
         for (String s : contents) {
-            ele.contents.add(Component.literal(s));
+            ele.components.add(Component.literal(s));
         }
 
         if (visibleTime == -1) {
@@ -61,13 +58,9 @@ public class TipDisplayUtil {
         displayTip(ele, false);
     }
 
-    public static void forceAdd(String ID, boolean first) {
-        forceAdd(getTipEle(ID), first);
-    }
-
     public static void forceAdd(TipElement ele, boolean first) {
         for (TipElement q : TipHUD.renderQueue) {
-            if (q.ID.equals(ele.ID)) {
+            if (q.id.equals(ele.id)) {
                 return;
             }
         }
@@ -79,22 +72,10 @@ public class TipDisplayUtil {
         }
     }
 
-    public static TipElement getTipEle(String ID) {
-        if (CACHE.containsKey(ID)) {
-            return CACHE.get(ID);
-        } else {
-            TipElement newElement = new TipElement(ID);
-            if (newElement.history) {
-                CACHE.put(ID, newElement);
-            }
-            return newElement;
-        }
-    }
-
-    public static void pinTip(String ID) {
+    public static void pinTip(ResourceLocation ID) {
         for (int i = 0; i < TipHUD.renderQueue.size(); i++) {
             TipElement ele = TipHUD.renderQueue.get(i);
-            if (ele.ID.equals(ID)) {
+            if (ele.id.equals(ID)) {
                 try {
                     TipElement clone = (TipElement)ele.clone();
                     clone.alwaysVisible = true;
@@ -108,13 +89,13 @@ public class TipDisplayUtil {
         }
     }
 
-    public static void moveToFirst(String ID) {
-        if (TipHUD.renderQueue.size() <= 1 || TipHUD.renderQueue.get(0).ID.equals(ID)) {
+    public static void moveToFirst(ResourceLocation ID) {
+        if (TipHUD.renderQueue.size() <= 1 || TipHUD.renderQueue.get(0).id.equals(ID)) {
             return;
         }
         for (int i = 0; i < TipHUD.renderQueue.size(); i++) {
             TipElement ele = TipHUD.renderQueue.get(i);
-            if (ele.ID.equals(ID)) {
+            if (ele.id.equals(ID)) {
                 TipHUD.renderQueue.remove(i);
                 TipHUD.renderQueue.add(0, ele);
                 resetTipAnimation();
@@ -133,11 +114,6 @@ public class TipDisplayUtil {
         TipHUD.renderQueue.clear();
         resetTipAnimation();
     }
-
-    public static void clearCache() {
-        CACHE.clear();
-    }
-
     public static void openDebugScreen() {
         if (Minecraft.getInstance().player != null) {
             Minecraft.getInstance().setScreen(new DebugScreen());

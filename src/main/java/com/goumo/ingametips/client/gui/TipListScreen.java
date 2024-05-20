@@ -1,7 +1,7 @@
 package com.goumo.ingametips.client.gui;
 
-import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.TipElement;
+import com.goumo.ingametips.client.resource.TipElementManager;
 import com.goumo.ingametips.client.UnlockedTipManager;
 import com.goumo.ingametips.client.gui.widget.IconButton;
 import com.goumo.ingametips.client.util.AnimationUtil;
@@ -11,10 +11,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,9 +25,9 @@ import java.util.Map;
 
 public class TipListScreen extends Screen {
     private final boolean background;
-    private final Map<String, List<String>> customTipList = new HashMap<>();
+    private final Map<ResourceLocation, List<String>> customTipList = new HashMap<>();
 
-    private List<String> tipList;
+    private List<ResourceLocation> tipList;
     private TipElement selectEle = null;
     private int GuiHeight = 0;
     private int listHeight = 0;
@@ -37,7 +38,7 @@ public class TipListScreen extends Screen {
     private double displayListScroll = 0;
     private double displayTextScroll = 0;
 
-    public static String select = "";
+    public static ResourceLocation select = null;
 
     public TipListScreen(boolean background) {
         super(Component.empty());
@@ -46,8 +47,6 @@ public class TipListScreen extends Screen {
 
     @Override
     public void init() {
-//        minecraft.keyboardHandler.setSendRepeatsToGui(true);
-
         this.addRenderableWidget(new IconButton(0, 0, IconButton.ICON_CROSS, 0xFFC6FCFF, Component.translatable("tip.gui.close"), (button) -> {
             onClose();
         }));
@@ -56,13 +55,13 @@ public class TipListScreen extends Screen {
         }));
 
         tipList = new ArrayList<>(UnlockedTipManager.manager.getVisible());
-        UnlockedTipManager.manager.getCustom().forEach((c) -> {
-            customTipList.put(c.get(0), c);
-            tipList.add(c.get(0));
-        });
+//        UnlockedTipManager.manager.getCustom().forEach((c) -> {
+//            customTipList.put(c.get(0), c);
+//            tipList.add(c.get(0));
+//        });
 
         if (!tipList.contains(select)) {
-            select = "";
+            select = null;
         }
 
         GuiHeight = (int)(height*0.8F);
@@ -90,7 +89,7 @@ public class TipListScreen extends Screen {
         graphics.fill(lx, y-16, lx+1, y-2, 0xFFC6FCFF);
         graphics.fill(x, y, lx, ly, BGColor);
         graphics.fill(lx, ly, lx+1, y, 0xFFC6FCFF);
-        if (fadeIn == 1.0F && !select.isEmpty()) {
+        if (fadeIn == 1.0F && select!=null) {
             renderTipContent(graphics, lx, y);
         }
 
@@ -128,7 +127,7 @@ public class TipListScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTicks);
     }
 
-    private void renderList(GuiGraphics graphics, List<String> list, int x, int y, int mouseX, int mouseY) {
+    private void renderList(GuiGraphics graphics, List<ResourceLocation> list, int x, int y, int mouseX, int mouseY) {
         //TODO widget
         int BGOutline = -4;
 
@@ -190,21 +189,18 @@ public class TipListScreen extends Screen {
                 }
                 graphics.fill(BGOutline, BGOutline, BGOutline+1, BGOutline + 10-BGOutline, fontColor);
 
-                String text = list.get(i);
-                if (text.startsWith("*custom*")) {
-                    text = text.substring(8);
-                } else {
-                    text = I18n.get("tip." + IngameTips.MOD_ID + "." + list.get(i) + ".title");
-                }
+                ResourceLocation rl = list.get(i);
 
-                if (font.width(text) > BGWidth) {
-                    text = text.substring(0, Math.min(text.length(), BGWidth/6)) + "...";
-                }
+                Component component = Component.translatable("tip." + rl.getNamespace() + "." + rl.getPath() + ".title");
+
+//                if (font.width(component) > BGWidth) {
+//                    String s = component.getString().substring(0, Math.min(component.getString().length(), BGWidth / 6)) + "...";
+//                }
 
                 if (list.get(i).equals(select)) {
-                    graphics.drawString(font, text, 0, 0, fontColor);
+                    graphics.drawString(font, component, 0, 0, fontColor);
                 } else {
-                    graphics.drawString(font, text, 0, 0, fontColor);
+                    graphics.drawString(font, component, 0, 0, fontColor);
                 }
                 ps.popPose();
             }
@@ -212,32 +208,18 @@ public class TipListScreen extends Screen {
     }
 
     private void renderTipContent(GuiGraphics graphics, int x, int y) { //TODO 搜索和分组
-        boolean custom = select.startsWith("*custom*");
-        if (selectEle == null || !selectEle.ID.equals(select)) {
-            if (custom) {
-                TipElement ele = new TipElement();
+//        boolean custom = select.startsWith("*custom*");
+        if (selectEle == null || !selectEle.id.equals(select)) {
+            selectEle = TipElementManager.getElement(select);
+        }
 
-                try {
-                    ele.ID = customTipList.get(select).get(0);
-                    ele.visibleTime = Integer.parseInt(customTipList.get(select).get(1));
-                    for (int i = 2; i < customTipList.get(select).size(); i++) {
-                        ele.contents.add(Component.literal(customTipList.get(select).get(i)));
-                    }
-                    selectEle = ele;
-                } catch (Exception e) {
-                    //移除有问题的自定义提示
-                    remove(customTipList.get(select).get(0));
-                    return;
-                }
-
-            } else {
-                selectEle = TipDisplayUtil.getTipEle(select);
-            }
+        if(selectEle == null) {
+            return;
         }
 
         if (selectEle.hide) {
             //移除不应该存在的提示
-            remove(selectEle.ID);
+            remove(selectEle.id);
             return;
         }
 
@@ -249,29 +231,29 @@ public class TipListScreen extends Screen {
         PoseStack ps = graphics.pose();
 
         ps.pushPose();
-        if (font.width(selectEle.contents.get(0).getString()) > x-32 - boxWidth) {
+        if (font.width(selectEle.components.get(0).getString()) > x-32 - boxWidth) {
             ps.translate(0, displayTextScroll, 0);
             RenderSystem.enableScissor(0, (int)((int)(height*0.1F+4)*scale), (int)(width*scale), (int)((GuiHeight -8)*scale));
             int line = 0;
-            for (int i = 0; i < selectEle.contents.size(); i++) {
-                line += 1 + GuiUtil.formatAndDraw(selectEle.contents.get(i), graphics, font, boxWidth + 4, y+4 + line*12,
+            for (int i = 0; i < selectEle.components.size(); i++) {
+                line += 1 + GuiUtil.formatAndDraw(selectEle.components.get(i), graphics, font, boxWidth + 4, y+4 + line*12,
                         x-8 - boxWidth, textColor, 12, false);
             }
             textHeight = line*12;
 
-        } else if (selectEle.contents.size() > 1) {
-            graphics.drawString(font, selectEle.contents.get(0), boxWidth + 4, y - 12, textColor);
+        } else if (selectEle.components.size() > 1) {
+            graphics.drawString(font, selectEle.components.get(0), boxWidth + 4, y - 12, textColor);
             ps.translate(0, displayTextScroll, 0);
             RenderSystem.enableScissor(0, (int)((int)(height*0.1F+4)*scale), (int)(width*scale), (int)((GuiHeight -8)*scale));
             int line = 0;
-            for (int i = 1; i < selectEle.contents.size(); i++) {
-                line += 1 + GuiUtil.formatAndDraw(selectEle.contents.get(i), graphics, font, boxWidth + 4, y+4 + line*12,
+            for (int i = 1; i < selectEle.components.size(); i++) {
+                line += 1 + GuiUtil.formatAndDraw(selectEle.components.get(i), graphics, font, boxWidth + 4, y+4 + line*12,
                         x-8 - boxWidth, textColor, 12, false);
             }
             textHeight = line*12;
 
         } else {
-            graphics.drawString(font, selectEle.contents.get(0), boxWidth + 4, y - 12, textColor);
+            graphics.drawString(font, selectEle.components.get(0), boxWidth + 4, y - 12, textColor);
         }
         RenderSystem.disableScissor();
         ps.popPose();
@@ -307,16 +289,16 @@ public class TipListScreen extends Screen {
         ps.popPose();
     }
 
-    private void remove(String ID) {
+    private void remove(ResourceLocation ID) {
         UnlockedTipManager.manager.removeUnlocked(ID);
         tipList.remove(select);
-        setSelect("");
+        setSelect(null);
         listHeight = tipList.size()*16;
         selectEle = null;
     }
 
-    private void setSelect(String s) {
-        if (!s.isEmpty()) {
+    private void setSelect(@Nullable ResourceLocation s) {
+        if (s!=null) {
             int target = tipList.indexOf(s) * 16;
             if (target >= -16) {
                 if (target + listScroll < 0) {
@@ -332,7 +314,7 @@ public class TipListScreen extends Screen {
         setTextScroll(0);
 
         IconButton button = (IconButton)this.renderables.get(1);
-        button.visible = !select.isEmpty();
+        button.visible = select!=null;
     }
 
     private void setListScroll(double listScroll) {

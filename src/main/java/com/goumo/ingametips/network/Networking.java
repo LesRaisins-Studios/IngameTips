@@ -35,7 +35,7 @@ public class Networking {
         );
     }
 
-    public static void send(ServerPlayer player, String ID) {
+    public static void send(ServerPlayer player, ResourceLocation ID) {
         CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new TipPacket(ID)

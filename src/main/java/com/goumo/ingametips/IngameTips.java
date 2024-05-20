@@ -7,11 +7,14 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 
 @Mod(IngameTips.MOD_ID)
 public class IngameTips {
+    public static final Logger LOGGER = LogManager.getLogger();
     public static final String MOD_ID = "ingametips";
     public static final File CONFIG = new File(FMLPaths.CONFIGDIR.get().toFile(), "ingametips");
     public static final File TIPS = new File(CONFIG, "tips");

@@ -25,8 +25,8 @@ apply plugin: 'org.spongepowered.mixin'
 
 
 version = '1.0.3'
-group = 'com.goumo.ingametips' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'ingametips'
+group = 'com.goumo.ingametips'
+archivesBaseName = 'ingametips-1.20.1'
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)

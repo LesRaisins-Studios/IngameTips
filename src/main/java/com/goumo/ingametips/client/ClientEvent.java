@@ -1,15 +1,16 @@
-package com.goumo.ingametips;
+package com.goumo.ingametips.client;
 
-import com.goumo.ingametips.client.TipElement;
-import com.goumo.ingametips.client.UnlockedTipManager;
+import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.util.TipDisplayUtil;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+@OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ClientEvent {
     @SubscribeEvent

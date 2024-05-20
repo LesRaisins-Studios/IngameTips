@@ -8,6 +8,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
 public class TipCommand {
@@ -16,9 +18,9 @@ public class TipCommand {
             Commands.literal("ingametips").requires((c) -> c.hasPermission(2)).then(
                 Commands.literal("add").then(
                     Commands.argument("targets", EntityArgument.players()).then(
-                    Commands.argument("ID", StringArgumentType.string())
+                    Commands.argument("ID", ResourceLocationArgument.id())
                         .executes((a) -> {
-                            String ID = a.getArgument("ID", String.class);
+                            ResourceLocation ID = ResourceLocationArgument.getId(a, "ID");
                             int i = 0;
 
                             for(ServerPlayer sp : EntityArgument.getPlayers(a, "targets")) {

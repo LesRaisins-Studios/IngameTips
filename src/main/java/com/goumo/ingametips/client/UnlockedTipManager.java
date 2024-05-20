@@ -3,6 +3,7 @@ package com.goumo.ingametips.client;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.goumo.ingametips.IngameTips;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,9 +19,9 @@ import java.util.List;
 public class UnlockedTipManager {
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LogManager.getLogger();
-    private List<String> visible;
-    private List<String> hide;
-    private List<List<String>> custom;
+    private List<ResourceLocation> visible;
+    private List<ResourceLocation> hide;
+    private List<List<ResourceLocation>> custom;
 
     public static final UnlockedTipManager manager = new UnlockedTipManager();
     public static String error = "";
@@ -87,19 +88,19 @@ public class UnlockedTipManager {
         }
     }
 
-    public List<String> getVisible() {
+    public List<ResourceLocation> getVisible() {
         return visible;
     }
 
-    public List<String> getHide() {
+    public List<ResourceLocation> getHide() {
         return hide;
     }
 
-    public List<List<String>> getCustom() {
+    public List<List<ResourceLocation>> getCustom() {
         return custom;
     }
 
-    public void unlock(String ID, boolean hide) {
+    public void unlock(ResourceLocation ID, boolean hide) {
         if (isUnlocked(ID)) return;
         if (hide) {
             this.hide.add(ID);
@@ -110,28 +111,28 @@ public class UnlockedTipManager {
     }
 
     public void unlockCustom(TipElement ele) {
-        if (isUnlocked(ele.ID)) return;
-        List<String> custom = new ArrayList<>();
+        if (isUnlocked(ele.id)) return;
+        List<ResourceLocation> custom = new ArrayList<>();
 
-        custom.add(ele.ID);
-        custom.add(Integer.toString(ele.visibleTime));
-        custom.add(ele.contents.get(0).getString());
-        for (int i = 1; i < ele.contents.size(); i++) {
-            custom.add(ele.contents.get(i).getString());
-        }
+//        custom.add(ele.id);
+//        custom.add(Integer.toString(ele.visibleTime));
+//        custom.add(ele.components.get(0).getString());
+//        for (int i = 1; i < ele.components.size(); i++) {
+//            custom.add(ele.components.get(i).getString());
+//        }
 
         this.custom.add(custom);
         saveToFile();
     }
 
-    public void removeUnlocked(String ID) {
+    public void removeUnlocked(ResourceLocation ID) {
         this.visible.remove(ID);
         this.hide.remove(ID);
         this.custom.removeIf((l) -> l.get(0).equals(ID));
         saveToFile();
     }
 
-    public boolean isUnlocked(String ID) {
+    public boolean isUnlocked(ResourceLocation ID) {
         if (visible.contains(ID) || hide.contains(ID)) {
             return true;
         }
