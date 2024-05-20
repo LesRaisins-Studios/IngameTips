@@ -2,10 +2,9 @@ package com.goumo.ingametips.client.util;
 
 import com.goumo.ingametips.client.gui.widget.IconButton;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.loading.FMLPaths;
@@ -23,16 +22,16 @@ public class GuiUtil {
     private static final Map<String, List<String>> textWrapCache = new HashMap<>();
     private static int leftClicked = 0;
 
-    public static boolean renderIconButton(PoseStack ps, Point icon, int mouseX, int mouseY, int x, int y, int color, int BGColor) {
+    public static boolean renderIconButton(GuiGraphics graphics, Point icon, int mouseX, int mouseY, int x, int y, int color, int BGColor) {
         if (color != 0 && isMouseIn(mouseX, mouseY, x, y, 10, 10)) {
-            GuiComponent.fill(ps, x, y, x+10, y+10, 50 << 24 | color & 0x00FFFFFF);
+            graphics.fill(x, y, x+10, y+10, 50 << 24 | color & 0x00FFFFFF);
         } else if (BGColor != 0) {
-            GuiComponent.fill(ps, x, y, x+10, y+10, BGColor);
+            graphics.fill(x, y, x+10, y+10, BGColor);
         }
-        return renderButton(ps, mouseX, mouseY, x, y, 10, 10, icon.X, icon.Y, 10, 10, 80, 80, color, IconButton.ICON_LOCATION);
+        return renderButton(graphics, mouseX, mouseY, x, y, 10, 10, icon.X, icon.Y, 10, 10, 80, 80, color, IconButton.ICON_LOCATION);
     }
 
-    public static boolean renderButton(PoseStack ps, int mouseX, int mouseY, int x, int y, int w, int h,
+    public static boolean renderButton(GuiGraphics graphics, int mouseX, int mouseY, int x, int y, int w, int h,
                                        float uOffset, float vOffset, int uWidth, int vHeight, int textureW, int textureH, int color, ResourceLocation resourceLocation) {
         if (color != 0) {
             float alpha = (color >> 24 & 0xFF) / 255F;
@@ -41,22 +40,21 @@ public class GuiUtil {
             float b = (color & 0xFF) / 255F;
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
-            RenderSystem.setShaderTexture(0, IconButton.ICON_LOCATION);
+
             RenderSystem.setShaderColor(r, g, b, alpha);
-            mc.getTextureManager().bindForSetup(resourceLocation);
-            GuiComponent.blit(ps, x, y, w, h, uOffset, vOffset, uWidth, vHeight, textureW, textureH);
+
+            graphics.blit(resourceLocation, x, y, w, h, uOffset, vOffset, uWidth, vHeight, textureW, textureH);
             RenderSystem.disableBlend();
-        } else
-            RenderSystem.setShaderTexture(0, IconButton.ICON_LOCATION);{
-            mc.getTextureManager().bindForSetup(resourceLocation);
-            GuiComponent.blit(ps, x, y, w, h, uOffset, vOffset, uWidth, vHeight, textureW, textureH);
+        } else {
+            graphics.blit(resourceLocation, x, y, w, h, uOffset, vOffset, uWidth, vHeight, textureW, textureH);
         }
+
         RenderSystem.setShaderColor(1,1,1,1);
 
         return isMouseIn(mouseX, mouseY, x, y, w, h) && isLeftClicked();
     }
 
-    public static void renderIcon(PoseStack ps, Point icon, int x, int y, int color) {
+    public static void renderIcon(GuiGraphics graphics, Point icon, int x, int y, int color) {
         if (color != 0) {
             float alpha = (color >> 24 & 0xFF) / 255F;
             float r = (color >> 16 & 0xFF) / 255F;
@@ -65,13 +63,13 @@ public class GuiUtil {
 
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
-            RenderSystem.setShaderTexture(0, IconButton.ICON_LOCATION);
+
             RenderSystem.setShaderColor(r, g, b, alpha);
-            GuiComponent.blit(ps, x, y, 10, 10, icon.X, icon.Y, 10, 10, 80, 80);
+            graphics.blit(IconButton.ICON_LOCATION, x, y, 10, 10, icon.X, icon.Y, 10, 10, 80, 80);
             RenderSystem.disableBlend();
         } else {
             RenderSystem.setShaderTexture(0, IconButton.ICON_LOCATION);
-            GuiComponent.blit(ps, x, y, 10, 10, icon.X, icon.Y, 10, 10, 80, 80);
+            graphics.blit(IconButton.ICON_LOCATION, x, y, 10, 10, icon.X, icon.Y, 10, 10, 80, 80);
         }
         RenderSystem.setShaderColor(1,1,1,1);
     }
@@ -106,36 +104,36 @@ public class GuiUtil {
         return GLFW.glfwGetKey(mc.getWindow().getWindow(), key) == 1;
     }
 
-    public static int formatAndDraw(Component component, PoseStack ps, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
-        return formatAndDraw(component.getString(), ps, font, x, y, maxWidth, color, lineSpace, shadow);
+    public static int formatAndDraw(Component component, GuiGraphics graphics, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
+        return formatAndDraw(component.getString(), graphics, font, x, y, maxWidth, color, lineSpace, shadow);
     }
 
-    public static int formatAndDraw(String text, PoseStack ps, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
-        text = text.replaceAll("&(?!&)", "\u00a7")
+    public static int formatAndDraw(String text, GuiGraphics graphics, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
+        text = text.replaceAll("&(?!&)", "§")
                    .replaceAll("\\$GAMEPATH\\$", FMLPaths.GAMEDIR.get().toString().replaceAll("\\\\", "\\\\\\\\"));
 
-        return drawWrapString(text, ps, font, x, y, maxWidth, color, lineSpace, shadow);
+        return drawWrapString(text, graphics, font, x, y, maxWidth, color, lineSpace, shadow);
     }
 
-    public static int drawWrapText(Component component, PoseStack ps, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
-        return drawWrapString(component.getString(), ps, font, x, y, maxWidth, color, lineSpace, shadow);
+    public static int drawWrapText(Component component, GuiGraphics graphics, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
+        return drawWrapString(component.getString(), graphics, font, x, y, maxWidth, color, lineSpace, shadow);
     }
 
-    public static int drawWrapString(String text, PoseStack ps, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
+    public static int drawWrapString(String text, GuiGraphics graphics, Font font, float x, float y, int maxWidth, int color, int lineSpace, boolean shadow) {
         List<String> lines = wrapString(text, font, maxWidth);
 
         for (int i = 0; i < lines.size(); i++) {
             if (i == 0) {
                 if (shadow) {
-                    font.drawShadow(ps, lines.get(i), x, y, color);
+                    graphics.drawString(font, lines.get(i), (int) x, (int) y, color);
                 } else {
-                    font.draw(ps, lines.get(i), x, y, color);
+                    graphics.drawString(font, lines.get(i), (int) x, (int) y, color, false);
                 }
             } else {
                 if (shadow) {
-                    font.drawShadow(ps, lines.get(i), x, y + (i * lineSpace), color);
+                    graphics.drawString(font, lines.get(i), (int) x, (int) (y + (i * lineSpace)), color);
                 } else {
-                    font.draw(ps, lines.get(i), x, y + (i * lineSpace), color);
+                    graphics.drawString(font, lines.get(i), x, y + (i * lineSpace), color, false);
                 }
             }
         }
@@ -161,10 +159,10 @@ public class GuiUtil {
                         int width = font.width(potentialLine);
 
                         if (width > maxWidth) {
-                            if (line.toString().endsWith("\u00A7")) {
+                            if (line.toString().endsWith("§")) {
                                 line = new StringBuilder(line.substring(0, line.length() - 1));
                                 lines.add(line.toString());
-                                line = new StringBuilder("\u00A7" + c);
+                                line = new StringBuilder("§" + c);
                             } else {
                                 lines.add(line.toString());
                                 line = new StringBuilder(String.valueOf(c));
@@ -179,10 +177,10 @@ public class GuiUtil {
                     int width = font.width(potentialLine);
 
                     if (width > maxWidth) {
-                        if (line.toString().endsWith("\u00A7")) {
+                        if (line.toString().endsWith("§")) {
                             line = new StringBuilder(line.substring(0, line.length() - 1));
                             lines.add(line.toString());
-                            line = new StringBuilder("\u00A7" + word + " ");
+                            line = new StringBuilder("§" + word + " ");
                         } else {
                             lines.add(line.toString());
                             line = new StringBuilder(word + " ");
@@ -199,14 +197,14 @@ public class GuiUtil {
             }
 
             //为每行开头添加生效的格式化代码
-            Pattern pattern = Pattern.compile("\u00A7.");
+            Pattern pattern = Pattern.compile("§.");
             StringBuilder formattingCode = new StringBuilder();
             for (int i = 0; i < lines.size(); i++) {
                 lines.set(i, formattingCode + lines.get(i));
 
                 Matcher matcher = pattern.matcher(lines.get(i).substring(formattingCode.length()));
                 while (matcher.find() && formattingCode.length() < 32) {
-                    if (matcher.group().equals("\u00A7r")) {
+                    if (matcher.group().equals("§r")) {
                         formattingCode = new StringBuilder();
                     } else {
                         formattingCode.append(matcher.group());

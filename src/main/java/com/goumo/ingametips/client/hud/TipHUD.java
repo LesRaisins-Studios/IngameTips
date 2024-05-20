@@ -1,27 +1,32 @@
 package com.goumo.ingametips.client.hud;
 
 import com.goumo.ingametips.IngameTips;
+import com.goumo.ingametips.client.RenderHUD;
 import com.goumo.ingametips.client.TipElement;
+import com.goumo.ingametips.client.gui.DebugScreen;
 import com.goumo.ingametips.client.gui.EmptyScreen;
 import com.goumo.ingametips.client.gui.widget.IconButton;
 import com.goumo.ingametips.client.util.AnimationUtil;
 import com.goumo.ingametips.client.util.GuiUtil;
 import com.goumo.ingametips.client.util.Point;
+import com.goumo.ingametips.client.util.TipDisplayUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraftforge.client.gui.overlay.ForgeGui;
+import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import java.util.List;
 
-public class TipHUD extends GuiComponent {
+public class TipHUD implements IGuiOverlay {
     private final Minecraft mc = Minecraft.getInstance();
-    private final PoseStack ps;
-    private final TipElement element;
+    private TipElement element;
     private final int lineSpace = 12;
-    private final boolean alwaysVisible;
+    private final boolean alwaysVisible = true;
 
     private int descLines = 0;
     private int titleLines = 0;
@@ -33,13 +38,33 @@ public class TipHUD extends GuiComponent {
 
     public boolean visible = true;
 
-    public TipHUD(PoseStack matrixStack, TipElement element) {
-        this.ps = matrixStack;
-        this.element = element;
-        this.alwaysVisible = element.alwaysVisible;
+    public TipHUD() {
     }
 
-    public void render(boolean isGUI) {
+    @Override
+    public void render(ForgeGui gui, GuiGraphics graphics, float partialTick, int width, int height) {
+        boolean isGUI = false;
+        if (RenderHUD.renderQueue.isEmpty()) return;
+        if (mc.screen != null) {
+            if (!(mc.screen instanceof ChatScreen) && !(mc.screen instanceof EmptyScreen) && !(mc.screen instanceof DebugScreen)) {
+                return;
+            }
+        }
+
+        if (element == null) {
+            element = RenderHUD.renderQueue.get(0);
+        }
+
+        if (!this.visible) {
+            if (RenderHUD.renderQueue.size() <= 1 && mc.screen instanceof EmptyScreen) {
+                mc.popGuiLayer();
+            }
+            TipDisplayUtil.removeCurrent();
+            return;
+
+        } else if (!GuiUtil.isKeyDown(258) && mc.screen instanceof EmptyScreen) {
+            mc.popGuiLayer();
+        }
         if (!visible) return;
 
         float fadeProgress = 1.0F;
@@ -67,7 +92,7 @@ public class TipHUD extends GuiComponent {
                 if (descLines >= element.contents.size() && renderPos1.X > mainWindow.X * 0.5) {
                     extendedWidth += 24;
                 } else {
-                    GuiUtil.drawWrapString(I18n.get("tip." + IngameTips.MOD_ID + ".too_long"), ps, mc.font,
+                    GuiUtil.drawWrapString(I18n.get("tip." + IngameTips.MOD_ID + ".too_long"), graphics, mc.font,
                             8, 8, (int)(mainWindow.X*0.5F),
                             element.fontColor, lineSpace, true);
                 }
@@ -113,12 +138,14 @@ public class TipHUD extends GuiComponent {
             }
         }
 
+        PoseStack ps = graphics.pose();
+
         ps.pushPose();
         ps.translate(-yaw*0.1F + fadeProgress*16 - 16, -pitch*0.1F, 1000);
 
-        renderContent(element.contents, renderPos1, fontColor, renderPos2, BGColor);
+        renderContent(element.contents, graphics, renderPos1, fontColor, renderPos2, BGColor);
 
-        renderButton(renderPos2.X - 13, renderPos1.Y-1, fontColor);
+        renderButton(graphics, renderPos2.X - 13, renderPos1.Y-1, fontColor);
 
         if (!isAlwaysVisible() && fadeProgress == 1.0F) {
             //进度条
@@ -133,68 +160,68 @@ public class TipHUD extends GuiComponent {
                 ps.pushPose();
                 ps.translate(x, y, 0);
                 ps.scale(lineProgress, 1, 1);
-                fill(ps, 0, 0, x2, 1, fontColor);
+                graphics.fill(0, 0, x2, 1, fontColor);
                 ps.popPose();
             }
         } else if (isAlwaysVisible() || fadeIn) {
-            fill(ps, renderPos1.X - 4, renderPos1.Y + (titleLines+1)*lineSpace,
+            graphics.fill(renderPos1.X - 4, renderPos1.Y + (titleLines+1)*lineSpace,
                     renderPos2.X, renderPos1.Y + (titleLines+1)*lineSpace + 1, fontColor);
         }
         ps.popPose();
     }
 
-    private void renderContent(List<Component> texts, Point renderPos1, int fontColor, Point renderPos2, int BGColor) {
+    private void renderContent(List<Component> texts, GuiGraphics graphics, Point renderPos1, int fontColor, Point renderPos2, int BGColor) {
         int BGPosX = renderPos1.X - 4;
         int width = renderPos2.X- BGPosX;
 
         if (texts.size() > 1) {
-            fill(ps, BGPosX, renderPos1.Y - 4, renderPos2.X,
+            graphics.fill(BGPosX, renderPos1.Y - 4, renderPos2.X,
                     renderPos2.Y*2 + renderPos1.Y + 4 + (descLines -1)*lineSpace, BGColor);
             descLines = 0;
             //标题
             int t = -1;
-            t += GuiUtil.formatAndDraw(texts.get(0), ps, mc.font, renderPos1.X, renderPos1.Y,
+            t += GuiUtil.formatAndDraw(texts.get(0), graphics, mc.font, renderPos1.X, renderPos1.Y,
                     width-16, fontColor, lineSpace, false);
             descLines += t;
             titleLines = t;
             //内容
             for (int dt = 1; dt < texts.size(); dt++) {
-                descLines += GuiUtil.formatAndDraw(texts.get(dt), ps, mc.font,
+                descLines += GuiUtil.formatAndDraw(texts.get(dt), graphics, mc.font,
                         renderPos1.X, descLines*lineSpace + renderPos1.Y+17,
                         width-8, fontColor, lineSpace, false);
             }
         } else {//只有标题
-            fill(ps, BGPosX, renderPos1.Y - 4,
+            graphics.fill(BGPosX, renderPos1.Y - 4,
                 renderPos2.X, renderPos2.Y + renderPos1.Y + (descLines)*lineSpace, BGColor);
             descLines = 0;
 
             int t = -1;
-            t += GuiUtil.formatAndDraw(texts.get(0), ps, mc.font,
+            t += GuiUtil.formatAndDraw(texts.get(0), graphics, mc.font,
                     renderPos1.X, renderPos1.Y, width-16, fontColor, lineSpace, false);
             descLines += t;
             titleLines = t;
         }
     }
 
-    private void renderButton(int x, int y, int color) {
+    private void renderButton(GuiGraphics graphics, int x, int y, int color) {
         if (notFading() && (mc.screen != null || GuiUtil.isKeyDown(258))) {
             if (mc.screen == null) mc.setScreen(new EmptyScreen());
 
-            if (GuiUtil.renderIconButton(ps, IconButton.ICON_CROSS, GuiUtil.getMouseX(), GuiUtil.getMouseY(), x, y, color, 0)) {
+            if (GuiUtil.renderIconButton(graphics, IconButton.ICON_CROSS, GuiUtil.getMouseX(), GuiUtil.getMouseY(), x, y, color, 0)) {
                 if (notFading()) {
                     fadeOut = true;
                 }
             }
             //标题超过 1 行时把锁定按钮从左边移动到下面
             if (titleLines > 1){
-                if (!isAlwaysVisible() && GuiUtil.renderIconButton(ps, IconButton.ICON_LOCK, GuiUtil.getMouseX(), GuiUtil.getMouseY(), x, y+10, color, 0))
+                if (!isAlwaysVisible() && GuiUtil.renderIconButton(graphics, IconButton.ICON_LOCK, GuiUtil.getMouseX(), GuiUtil.getMouseY(), x, y+10, color, 0))
                     alwaysVisibleOverride = true;
             } else {
-                if (!isAlwaysVisible() && GuiUtil.renderIconButton(ps, IconButton.ICON_LOCK, GuiUtil.getMouseX(), GuiUtil.getMouseY(), x-15, y, color, 0))
+                if (!isAlwaysVisible() && GuiUtil.renderIconButton(graphics, IconButton.ICON_LOCK, GuiUtil.getMouseX(), GuiUtil.getMouseY(), x-15, y, color, 0))
                     alwaysVisibleOverride = true;
             }
         } else {
-            GuiUtil.renderIcon(ps, IconButton.ICON_CROSS, x, y, color);
+            GuiUtil.renderIcon(graphics, IconButton.ICON_CROSS, x, y, color);
         }
     }
 

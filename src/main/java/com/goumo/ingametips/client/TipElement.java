@@ -3,8 +3,6 @@ package com.goumo.ingametips.client;
 import com.google.gson.*;
 import com.goumo.ingametips.IngameTips;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,7 +39,7 @@ public class TipElement implements Cloneable {
         if (!filePath.exists()) {
             LOGGER.error("File does not exists '{}'", filePath);
             replaceToError(filePath, "not_exists");
-            contents.add(new TranslatableComponent("tip." + IngameTips.MOD_ID + ".error.desc"));
+            contents.add(Component.translatable("tip." + IngameTips.MOD_ID + ".error.desc"));
             return;
         }
 
@@ -58,7 +56,7 @@ public class TipElement implements Cloneable {
                 JsonArray JContents = jsonObject.getAsJsonArray("contents");
                 for (int i = 0; i < JContents.size(); i++) {
                     String raw = JContents.get(i).toString();
-                    contents.add(new TranslatableComponent(raw.substring(1, raw.length() - 1)));
+                    contents.add(Component.translatable(raw.substring(1, raw.length() - 1)));
                 }
             }
             if (contents.isEmpty()) {
@@ -78,7 +76,7 @@ public class TipElement implements Cloneable {
         } catch (JsonSyntaxException e) {
             LOGGER.error("Invalid JSON file format '{}'", filePath);
             replaceToError(filePath, "invalid");
-            contents.add(new TranslatableComponent("tip." + IngameTips.MOD_ID + ".error.desc"));
+            contents.add(Component.translatable("tip." + IngameTips.MOD_ID + ".error.desc"));
         } catch (Exception e) {
             LOGGER.error("Unable to load file '{}'", filePath);
             replaceToError(filePath, "load");
@@ -87,8 +85,8 @@ public class TipElement implements Cloneable {
 
     public void replaceToError(File filePath, String type) {
         contents = new ArrayList<>();
-        contents.add(new TranslatableComponent("tip." + IngameTips.MOD_ID + ".error." + type));
-        contents.add(new TextComponent(filePath.getPath()));
+        contents.add(Component.translatable("tip." + IngameTips.MOD_ID + ".error." + type));
+        contents.add(Component.literal(filePath.getPath()));
         fontColor = 0xFFFF5340;
         BGColor = 0xFF000000;
         alwaysVisible = true;

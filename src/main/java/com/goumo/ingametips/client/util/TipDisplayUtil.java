@@ -5,7 +5,7 @@ import com.goumo.ingametips.client.TipElement;
 import com.goumo.ingametips.client.UnlockedTipManager;
 import com.goumo.ingametips.client.gui.DebugScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,10 +46,10 @@ public class TipDisplayUtil {
         TipElement ele = new TipElement();
         ele.ID = "*custom*" + title;
         ele.history = history;
-        ele.contents.add(new TextComponent(title));
+        ele.contents.add(Component.literal(title));
         String[] contents = content.split("\\$");
         for (String s : contents) {
-            ele.contents.add(new TextComponent(s));
+            ele.contents.add(Component.literal(s));
         }
 
         if (visibleTime == -1) {

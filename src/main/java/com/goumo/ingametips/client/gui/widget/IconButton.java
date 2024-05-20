@@ -3,11 +3,12 @@ package com.goumo.ingametips.client.gui.widget;
 import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.util.Point;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 public class IconButton extends Button {
     public static final ResourceLocation ICON_LOCATION = new ResourceLocation(IngameTips.MOD_ID, "textures/gui/hud_icon.png");
@@ -29,49 +30,57 @@ public class IconButton extends Button {
     public final int color;
 
     public IconButton(int x, int y, Point icon, int color, Component title, OnPress pressedAction) {
-        super(x, y, 10, 10, title, pressedAction);
+        super(x, y, 10, 10, title, pressedAction, DEFAULT_NARRATION);
         this.color = color;
         this.currentIcon = icon;
     }
 
     public void setXY(int x, int y) {
-        this.x = x;
-        this.y = y;
+        this.setX(x);
+        this.setY(y);
     }
 
     @Override
-    public void renderButton(PoseStack ps, int mouseX, int mouseY, float partialTicks) {
+    protected void renderWidget(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int x = getX();
+        int y = getY();
         if (isHovered) {
-            fill(ps, x, y, x+width, y+height, 50 << 24 | color & 0x00FFFFFF);
-            renderToolTip(ps, mouseX, mouseY);
+            graphics.fill(x, y, x+width, y+height, 50 << 24 | color & 0x00FFFFFF);
+            renderToolTip(graphics, mouseX, mouseY);
         }
 
         float r = (color >> 16 & 0xFF) / 255F;
         float g = (color >> 8 & 0xFF) / 255F;
         float b = (color & 0xFF) / 255F;
+
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderTexture(0, IconButton.ICON_LOCATION);
+
         RenderSystem.setShaderColor(r, g, b, alpha);
-        Minecraft.getInstance().getTextureManager().bindForSetup(ICON_LOCATION);
-        blit(ps, x, y, currentIcon.X, currentIcon.Y, 10, 10, 80, 80);
+
+        graphics.blit(ICON_LOCATION, x, y, currentIcon.X, currentIcon.Y, 10, 10, 80, 80);
+
         RenderSystem.setShaderColor(1,1,1,1);
         RenderSystem.disableBlend();
     }
 
-    @Override
-    public void renderToolTip(PoseStack ps, int mouseX, int mouseY) {
+
+
+    public void renderToolTip(GuiGraphics graphics, int mouseX, int mouseY) {
         Minecraft mc = Minecraft.getInstance();
         String text = getMessage().getString();
         if (!text.isEmpty()) {
             int textWidth = mc.font.width(text);
+            int x = getX();
+            int y = getY();
             int renderX = x-textWidth+8;
+
             if (renderX < 0) {
-                fill(ps, x, y - 12, x+2 + textWidth, y, 50 << 24 | color & 0x00FFFFFF);
-                mc.font.draw(ps, text, x+2, y-10, color);
+                graphics.fill(x, y - 12, x+2 + textWidth, y, 50 << 24 | color & 0x00FFFFFF);
+                graphics.drawString(mc.font, text, x+2, y-10, color);
             } else {
-                fill(ps, x+8 - textWidth, y - 12, x + 10, y, 50 << 24 | color & 0x00FFFFFF);
-                mc.font.draw(ps, text, x-textWidth+width, y-10, color);
+                graphics.fill(x+8 - textWidth, y - 12, x + 10, y, 50 << 24 | color & 0x00FFFFFF);
+                graphics.drawString(mc.font, text, x-textWidth+width, y-10, color);
             }
         }
     }

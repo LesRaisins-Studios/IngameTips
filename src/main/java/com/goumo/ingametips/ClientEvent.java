@@ -5,7 +5,7 @@ import com.goumo.ingametips.client.UnlockedTipManager;
 import com.goumo.ingametips.client.util.TipDisplayUtil;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ClientEvent {
     @SubscribeEvent
-    public static void displayFileReadError(ScreenOpenEvent event) {
+    public static void displayFileReadError(ScreenEvent.Opening event) {
         if (event.getScreen() instanceof TitleScreen && !UnlockedTipManager.error.isEmpty()) {
             TipElement ele = new TipElement();
             ele.replaceToError(IngameTips.UNLCOKED_FILE, UnlockedTipManager.error);
