@@ -1,9 +1,9 @@
 package com.goumo.ingametips.client.util;
 
-import com.goumo.ingametips.client.RenderHUD;
 import com.goumo.ingametips.client.TipElement;
 import com.goumo.ingametips.client.UnlockedTipManager;
 import com.goumo.ingametips.client.gui.DebugScreen;
+import com.goumo.ingametips.client.hud.TipHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
@@ -21,7 +21,7 @@ public class TipDisplayUtil {
         if (element.ID.isEmpty()) return;
         if (element.onceOnly && UnlockedTipManager.manager.isUnlocked(element.ID)) return;
 
-        for (TipElement ele : RenderHUD.renderQueue) {
+        for (TipElement ele : TipHUD.renderQueue) {
             if (ele.ID.equals(element.ID)) {
                 return;
             }
@@ -36,9 +36,9 @@ public class TipDisplayUtil {
         }
 
         if (first) {
-            RenderHUD.renderQueue.add(0, element);
+            TipHUD.renderQueue.add(0, element);
         } else {
-            RenderHUD.renderQueue.add(element);
+            TipHUD.renderQueue.add(element);
         }
     }
 
@@ -66,16 +66,16 @@ public class TipDisplayUtil {
     }
 
     public static void forceAdd(TipElement ele, boolean first) {
-        for (TipElement q : RenderHUD.renderQueue) {
+        for (TipElement q : TipHUD.renderQueue) {
             if (q.ID.equals(ele.ID)) {
                 return;
             }
         }
 
         if (first) {
-            RenderHUD.renderQueue.add(0, ele);
+            TipHUD.renderQueue.add(0, ele);
         } else {
-            RenderHUD.renderQueue.add(ele);
+            TipHUD.renderQueue.add(ele);
         }
     }
 
@@ -91,20 +91,14 @@ public class TipDisplayUtil {
         }
     }
 
-    public static void removeCurrent() {
-        RenderHUD.renderQueue.remove(0);
-        resetTipAnimation();
-        RenderHUD.currentTip = null;
-    }
-
     public static void pinTip(String ID) {
-        for (int i = 0; i < RenderHUD.renderQueue.size(); i++) {
-            TipElement ele = RenderHUD.renderQueue.get(i);
+        for (int i = 0; i < TipHUD.renderQueue.size(); i++) {
+            TipElement ele = TipHUD.renderQueue.get(i);
             if (ele.ID.equals(ID)) {
                 try {
                     TipElement clone = (TipElement)ele.clone();
                     clone.alwaysVisible = true;
-                    RenderHUD.renderQueue.set(i, clone);
+                    TipHUD.renderQueue.set(i, clone);
                     break;
                 } catch (CloneNotSupportedException e) {
                     e.printStackTrace();
@@ -115,15 +109,14 @@ public class TipDisplayUtil {
     }
 
     public static void moveToFirst(String ID) {
-        if (RenderHUD.renderQueue.size() <= 1 || RenderHUD.renderQueue.get(0).ID.equals(ID)) {
+        if (TipHUD.renderQueue.size() <= 1 || TipHUD.renderQueue.get(0).ID.equals(ID)) {
             return;
         }
-        for (int i = 0; i < RenderHUD.renderQueue.size(); i++) {
-            TipElement ele = RenderHUD.renderQueue.get(i);
+        for (int i = 0; i < TipHUD.renderQueue.size(); i++) {
+            TipElement ele = TipHUD.renderQueue.get(i);
             if (ele.ID.equals(ID)) {
-                RenderHUD.renderQueue.remove(i);
-                RenderHUD.renderQueue.add(0, ele);
-                RenderHUD.currentTip = null;
+                TipHUD.renderQueue.remove(i);
+                TipHUD.renderQueue.add(0, ele);
                 resetTipAnimation();
                 return;
             }
@@ -137,9 +130,8 @@ public class TipDisplayUtil {
     }
 
     public static void clearRenderQueue() {
-        RenderHUD.renderQueue.clear();
+        TipHUD.renderQueue.clear();
         resetTipAnimation();
-        RenderHUD.currentTip = null;
     }
 
     public static void clearCache() {

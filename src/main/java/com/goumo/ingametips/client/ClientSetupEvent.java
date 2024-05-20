@@ -12,7 +12,7 @@ public class ClientSetupEvent {
     @SubscribeEvent
     public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
         // 注册 HUD
-        event.registerAboveAll("ingametips_tiphud", new TipHUD());
+        event.registerAboveAll("ingametips_tiphud", TipHUD.getInstance());
 
 
     }

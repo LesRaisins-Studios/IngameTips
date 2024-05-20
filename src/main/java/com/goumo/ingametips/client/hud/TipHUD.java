@@ -1,7 +1,6 @@
 package com.goumo.ingametips.client.hud;
 
 import com.goumo.ingametips.IngameTips;
-import com.goumo.ingametips.client.RenderHUD;
 import com.goumo.ingametips.client.TipElement;
 import com.goumo.ingametips.client.gui.DebugScreen;
 import com.goumo.ingametips.client.gui.EmptyScreen;
@@ -20,13 +19,14 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TipHUD implements IGuiOverlay {
+    public static final List<TipElement> renderQueue = new ArrayList<>();
+    public static TipHUD INSTANCE;
     private final Minecraft mc = Minecraft.getInstance();
-    private TipElement element;
     private final int lineSpace = 12;
-    private final boolean alwaysVisible = true;
 
     private int descLines = 0;
     private int titleLines = 0;
@@ -36,36 +36,20 @@ public class TipHUD implements IGuiOverlay {
     private boolean fadeOut = false;
     private boolean alwaysVisibleOverride = false;
 
-    public boolean visible = true;
+    private TipHUD() {
+    }
 
-    public TipHUD() {
+    public static TipHUD getInstance() {
+        if (INSTANCE == null){
+            INSTANCE = new TipHUD();
+        }
+        return INSTANCE;
     }
 
     @Override
     public void render(ForgeGui gui, GuiGraphics graphics, float partialTick, int width, int height) {
         boolean isGUI = false;
-        if (RenderHUD.renderQueue.isEmpty()) return;
-        if (mc.screen != null) {
-            if (!(mc.screen instanceof ChatScreen) && !(mc.screen instanceof EmptyScreen) && !(mc.screen instanceof DebugScreen)) {
-                return;
-            }
-        }
-
-        if (element == null) {
-            element = RenderHUD.renderQueue.get(0);
-        }
-
-        if (!this.visible) {
-            if (RenderHUD.renderQueue.size() <= 1 && mc.screen instanceof EmptyScreen) {
-                mc.popGuiLayer();
-            }
-            TipDisplayUtil.removeCurrent();
-            return;
-
-        } else if (!GuiUtil.isKeyDown(258) && mc.screen instanceof EmptyScreen) {
-            mc.popGuiLayer();
-        }
-        if (!visible) return;
+        if (!shouldRender()) return;
 
         float fadeProgress = 1.0F;
         float defaultBGAlpha = isGUI ? 0.75F : 0.3F;
@@ -85,16 +69,16 @@ public class TipHUD implements IGuiOverlay {
 
         //文本超出窗口时调整尺寸
         if ((descLines + titleLines+1)*lineSpace + renderPos1.Y > mainWindow.Y) {
-            if (descLines >= element.contents.size() && renderPos1.Y > 40) {
+            if (descLines >= getCurElement().contents.size() && renderPos1.Y > 40) {
                 extendedHeight += 24;
 
             } else if ((descLines + titleLines+1)*lineSpace + renderPos1.Y > mainWindow.Y) {
-                if (descLines >= element.contents.size() && renderPos1.X > mainWindow.X * 0.5) {
+                if (descLines >= getCurElement().contents.size() && renderPos1.X > mainWindow.X * 0.5) {
                     extendedWidth += 24;
                 } else {
                     GuiUtil.drawWrapString(I18n.get("tip." + IngameTips.MOD_ID + ".too_long"), graphics, mc.font,
                             8, 8, (int)(mainWindow.X*0.5F),
-                            element.fontColor, lineSpace, true);
+                            getCurElement().fontColor, lineSpace, true);
                 }
             }
         }
@@ -104,7 +88,7 @@ public class TipHUD implements IGuiOverlay {
             fadeProgress = progress;
 
             if (progress == 0) {
-                visible = false;
+                resetElement();
                 return;
             } else {
                 BGAlpha = defaultBGAlpha * progress;
@@ -122,8 +106,8 @@ public class TipHUD implements IGuiOverlay {
             }
         }
 
-        int BGColor = (int)(BGAlpha * 255.0F) << 24 | element.BGColor & 0x00FFFFFF;
-        int fontColor = (int)(fontAlpha * 255.0F) << 24 | element.fontColor & 0x00FFFFFF;
+        int BGColor = (int)(BGAlpha * 255.0F) << 24 | getCurElement().BGColor & 0x00FFFFFF;
+        int fontColor = (int)(fontAlpha * 255.0F) << 24 | getCurElement().fontColor & 0x00FFFFFF;
         float yaw = 0;
         float pitch = 0;
         if (mc.player != null) {
@@ -143,13 +127,13 @@ public class TipHUD implements IGuiOverlay {
         ps.pushPose();
         ps.translate(-yaw*0.1F + fadeProgress*16 - 16, -pitch*0.1F, 1000);
 
-        renderContent(element.contents, graphics, renderPos1, fontColor, renderPos2, BGColor);
+        renderContent(getCurElement().contents, graphics, renderPos1, fontColor, renderPos2, BGColor);
 
         renderButton(graphics, renderPos2.X - 13, renderPos1.Y-1, fontColor);
 
         if (!isAlwaysVisible() && fadeProgress == 1.0F) {
             //进度条
-            float lineProgress = 1-AnimationUtil.calcProgress(element.visibleTime, "TipVisibleTime", false);
+            float lineProgress = 1-AnimationUtil.calcProgress(getCurElement().visibleTime, "TipVisibleTime", false);
             int x = renderPos1.X-4;
             int y = renderPos1.Y + (titleLines+1)*lineSpace;
             int x2 = renderPos2.X - x;
@@ -168,6 +152,31 @@ public class TipHUD implements IGuiOverlay {
                     renderPos2.X, renderPos1.Y + (titleLines+1)*lineSpace + 1, fontColor);
         }
         ps.popPose();
+    }
+
+    private boolean shouldRender() {
+        if (renderQueue.isEmpty()) return false;
+        if (mc.screen != null) {
+            return mc.screen instanceof ChatScreen || mc.screen instanceof EmptyScreen || mc.screen instanceof DebugScreen;
+        }
+
+        return true;
+    }
+
+    public TipElement getCurElement() {
+        return renderQueue.get(0);
+    }
+
+    public void resetElement() {
+        TipHUD.renderQueue.remove(0);
+        TipDisplayUtil.resetTipAnimation();
+
+        descLines = 0;
+        titleLines = 0;
+        extendedWidth = 0;
+        extendedHeight = 0;
+        fadeIn = true;
+        fadeOut = false;
     }
 
     private void renderContent(List<Component> texts, GuiGraphics graphics, Point renderPos1, int fontColor, Point renderPos2, int BGColor) {
@@ -210,6 +219,7 @@ public class TipHUD implements IGuiOverlay {
             if (GuiUtil.renderIconButton(graphics, IconButton.ICON_CROSS, GuiUtil.getMouseX(), GuiUtil.getMouseY(), x, y, color, 0)) {
                 if (notFading()) {
                     fadeOut = true;
+                    alwaysVisibleOverride = false;
                 }
             }
             //标题超过 1 行时把锁定按钮从左边移动到下面
@@ -226,7 +236,7 @@ public class TipHUD implements IGuiOverlay {
     }
 
     public boolean isAlwaysVisible() {
-        return alwaysVisible || alwaysVisibleOverride;
+        return alwaysVisibleOverride;
     }
 
     public boolean notFading() {
