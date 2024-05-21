@@ -10,6 +10,7 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -42,11 +43,11 @@ public class TipElementManager implements ResourceManagerReloadListener {
     @Override
     public void onResourceManagerReload(@NotNull ResourceManager manager) {
         tipElements.clear();
-        Map<ResourceLocation, Resource> resources = manager.listResources("tips", rl -> rl.getPath().endsWith(".json"));
+        Map<ResourceLocation, Resource> resources = manager.listResources("ingametips", rl -> rl.getPath().endsWith(".json"));
         for (var entry : resources.entrySet()) {
             try(Reader stream = entry.getValue().openAsReader()){
                 ResourceLocation path = entry.getKey();
-                ResourceLocation id = new ResourceLocation(path.getNamespace(), path.getPath().substring(5, path.getPath().length() - 5));
+                ResourceLocation id = new ResourceLocation(path.getNamespace(), path.getPath().substring(11, path.getPath().length() - 5));
 
                 TipElementPOJO pojo = GSON.fromJson(stream, TipElementPOJO.class);
                 TipElement element = parse(id, pojo);
@@ -59,6 +60,7 @@ public class TipElementManager implements ResourceManagerReloadListener {
         }
     }
 
+    @Nullable
     public static TipElement getElement(@NotNull ResourceLocation rl) {
         return getInstance().tipElements.getOrDefault(rl, getInstance().customTips.get(rl));
     }
@@ -73,7 +75,6 @@ public class TipElementManager implements ResourceManagerReloadListener {
         element.onceOnly = pojo.onceOnly;
         element.hide = pojo.hide;
         element.visibleTime = Math.max(pojo.visibleTime, 0);
-        element.history = true;
 
         return element;
     }
@@ -85,7 +86,6 @@ public class TipElementManager implements ResourceManagerReloadListener {
     }
 
     public void saveCustomTip(ResourceLocation rl, TipElement element) {
-        if(!element.history) return;
         TipElementPOJO pojo = new TipElementPOJO();
         pojo.contents.addAll(element.components);
         pojo.fontColor = "0x" + Integer.toHexString(element.fontColor);

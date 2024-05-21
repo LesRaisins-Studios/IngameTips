@@ -37,9 +37,7 @@ public class TipDisplayUtil {
             }
         }
 
-        if (element.history) {
-            UnlockedTipManager.getManager().unlock(element);
-        }
+        UnlockedTipManager.getManager().unlock(element);
 
         if (first) {
             TipHUD.renderQueue.add(0, element);
@@ -51,7 +49,6 @@ public class TipDisplayUtil {
     public static void displayCustomTip(String title, Component content, int visibleTime, boolean history) {
         TipElement ele = new TipElement();
         ele.id = new ResourceLocation(IngameTips.MOD_ID, title);
-        ele.history = history;
         ele.components.add(Component.literal(title));
         ele.components.add(content);
 

@@ -14,8 +14,6 @@ public class TipElementPOJO {
     public boolean onceOnly = false;
     // tip是否应该在list中隐藏
     public boolean hide = false;
-    // 没啥用，准备删了
-    public boolean history = false;
     // 弹窗的保持时间
     public int visibleTime = 15000;
     // 字体颜色

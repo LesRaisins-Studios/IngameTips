@@ -14,7 +14,6 @@ public class TipElement implements Cloneable {
     public boolean alwaysVisible = false;
     public boolean onceOnly = false;
     public boolean hide = false;
-    public boolean history = false;
     public int visibleTime = 30000;
     public int fontColor = 0xFFC6FCFF;
     public int bgColor = 0xFF000000;

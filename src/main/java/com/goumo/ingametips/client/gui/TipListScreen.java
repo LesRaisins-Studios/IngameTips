@@ -10,6 +10,7 @@ import com.goumo.ingametips.client.util.TipDisplayUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -37,12 +38,14 @@ public class TipListScreen extends Screen {
     private double textScroll = 0;
     private double displayListScroll = 0;
     private double displayTextScroll = 0;
+    private final Screen previous;
 
     public static ResourceLocation select = null;
 
-    public TipListScreen(boolean background) {
+    public TipListScreen(Screen previous) {
         super(Component.empty());
-        this.background = background;
+        this.background = previous instanceof PauseScreen;
+        this.previous = previous;
     }
 
     @Override
@@ -191,7 +194,13 @@ public class TipListScreen extends Screen {
 
                 ResourceLocation rl = list.get(i);
 
-                Component component = Component.translatable("tip." + rl.getNamespace() + "." + rl.getPath() + ".title");
+                TipElement ele = TipElementManager.getElement(rl);
+
+                if(ele == null || ele.components.isEmpty()) {
+                    continue;
+                }
+
+                Component component = ele.components.get(0);
 
 //                if (font.width(component) > BGWidth) {
 //                    String s = component.getString().substring(0, Math.min(component.getString().length(), BGWidth / 6)) + "...";
@@ -200,7 +209,7 @@ public class TipListScreen extends Screen {
                 if (list.get(i).equals(select)) {
                     graphics.drawString(font, component, 0, 0, fontColor);
                 } else {
-                    graphics.drawString(font, component, 0, 0, fontColor);
+                    graphics.drawString(font, component, 0, 0, fontColor, false);
                 }
                 ps.popPose();
             }
@@ -391,6 +400,8 @@ public class TipListScreen extends Screen {
 
     @Override
     public void onClose() {
+        super.onClose();
+
         AnimationUtil.removeAnimation("TipListSelColor");
         AnimationUtil.removeAnimation("TipListDownArrow");
         AnimationUtil.removeAnimation("TipListGuiFading");
@@ -402,7 +413,10 @@ public class TipListScreen extends Screen {
         });
 
         TipDisplayUtil.resetTipAnimation();
-        super.onClose();
+
+        if(minecraft != null && previous != null) {
+            minecraft.setScreen(previous);
+        }
     }
 
     @Override
