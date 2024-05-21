@@ -1,8 +1,9 @@
-package com.goumo.ingametips.client;
+package com.goumo.ingametips.client.resource;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.goumo.ingametips.IngameTips;
+import com.goumo.ingametips.client.TipElement;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,20 +22,27 @@ public class UnlockedTipManager {
     private static final Logger LOGGER = LogManager.getLogger();
     private List<ResourceLocation> visible;
     private List<ResourceLocation> hide;
-    private List<List<ResourceLocation>> custom;
-
-    public static final UnlockedTipManager manager = new UnlockedTipManager();
+    private List<ResourceLocation> custom;
+    private static UnlockedTipManager manager;
     public static String error = "";
 
-    static {
-        if (IngameTips.TIPS.mkdir()) {
-            LOGGER.info("Config path created");
+    public static UnlockedTipManager getManager() {
+        if(manager ==null){
+            manager = new UnlockedTipManager();
+            if (IngameTips.TIPS.mkdirs()) {
+                LOGGER.info("Config path created");
+            }
+            manager.loadFromFile();
         }
-        manager.loadFromFile();
+        return manager;
     }
 
     private UnlockedTipManager() {
         reset();
+    }
+
+    public static void setManager(UnlockedTipManager manager) {
+        UnlockedTipManager.manager = manager;
     }
 
     public void loadFromFile() {
@@ -51,18 +59,18 @@ public class UnlockedTipManager {
             this.custom = fileManager.custom;
 
         } catch (IOException | JsonSyntaxException e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
             error = "load";
             LOGGER.error("Unable to load file: '{}'", IngameTips.UNLCOKED_FILE);
             createFile();
         }
     }
-
+    // 存储解锁信息至配置文件
     public void saveToFile() {
         try (FileWriter writer = new FileWriter(IngameTips.UNLCOKED_FILE)) {
             GSON.toJson(this, writer);
         } catch (IOException e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
             error = "save";
             LOGGER.error("Unable to save file: '{}'", IngameTips.UNLCOKED_FILE);
         }
@@ -75,7 +83,7 @@ public class UnlockedTipManager {
                 Files.copy(IngameTips.UNLCOKED_FILE.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 LOGGER.warn("Old file has been saved as '{}'", backupFile);
             } catch (IOException e) {
-                e.printStackTrace();
+                e.fillInStackTrace();
             }
         }
 
@@ -84,7 +92,7 @@ public class UnlockedTipManager {
             reset();
             GSON.toJson(this, writer);
         } catch (IOException e) {
-            e.printStackTrace();
+            e.fillInStackTrace();
         }
     }
 
@@ -96,48 +104,34 @@ public class UnlockedTipManager {
         return hide;
     }
 
-    public List<List<ResourceLocation>> getCustom() {
+    public List<ResourceLocation> getCustom() {
         return custom;
     }
 
-    public void unlock(ResourceLocation ID, boolean hide) {
-        if (isUnlocked(ID)) return;
-        if (hide) {
-            this.hide.add(ID);
+    public void unlock(TipElement element) {
+        if (isUnlocked(element.id)) return;
+        if (element.hide) {
+            this.hide.add(element.id);
         } else {
-            this.visible.add(ID);
+            this.visible.add(element.id);
         }
         saveToFile();
     }
 
-    public void unlockCustom(TipElement ele) {
-        if (isUnlocked(ele.id)) return;
-        List<ResourceLocation> custom = new ArrayList<>();
-
-//        custom.add(ele.id);
-//        custom.add(Integer.toString(ele.visibleTime));
-//        custom.add(ele.components.get(0).getString());
-//        for (int i = 1; i < ele.components.size(); i++) {
-//            custom.add(ele.components.get(i).getString());
-//        }
-
-        this.custom.add(custom);
+    public void unlockCustom(TipElement element) {
+        this.custom.add(element.id);
         saveToFile();
     }
 
     public void removeUnlocked(ResourceLocation ID) {
         this.visible.remove(ID);
         this.hide.remove(ID);
-        this.custom.removeIf((l) -> l.get(0).equals(ID));
+        this.custom.remove(ID);
         saveToFile();
     }
 
     public boolean isUnlocked(ResourceLocation ID) {
-        if (visible.contains(ID) || hide.contains(ID)) {
-            return true;
-        }
-
-        return custom.stream().anyMatch(l -> l.get(0).equals(ID));
+        return visible.contains(ID) || hide.contains(ID) || custom.contains(ID);
     }
 
     public void reset() {
@@ -145,4 +139,6 @@ public class UnlockedTipManager {
         this.hide = new ArrayList<>();
         this.custom = new ArrayList<>();
     }
+
+
 }

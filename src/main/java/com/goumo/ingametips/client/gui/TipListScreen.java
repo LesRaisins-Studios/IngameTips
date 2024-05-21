@@ -2,7 +2,7 @@ package com.goumo.ingametips.client.gui;
 
 import com.goumo.ingametips.client.TipElement;
 import com.goumo.ingametips.client.resource.TipElementManager;
-import com.goumo.ingametips.client.UnlockedTipManager;
+import com.goumo.ingametips.client.resource.UnlockedTipManager;
 import com.goumo.ingametips.client.gui.widget.IconButton;
 import com.goumo.ingametips.client.util.AnimationUtil;
 import com.goumo.ingametips.client.util.GuiUtil;
@@ -54,7 +54,7 @@ public class TipListScreen extends Screen {
             TipDisplayUtil.forceAdd(selectEle, true);
         }));
 
-        tipList = new ArrayList<>(UnlockedTipManager.manager.getVisible());
+        tipList = new ArrayList<>(UnlockedTipManager.getManager().getVisible());
 //        UnlockedTipManager.manager.getCustom().forEach((c) -> {
 //            customTipList.put(c.get(0), c);
 //            tipList.add(c.get(0));
@@ -290,7 +290,7 @@ public class TipListScreen extends Screen {
     }
 
     private void remove(ResourceLocation ID) {
-        UnlockedTipManager.manager.removeUnlocked(ID);
+        UnlockedTipManager.getManager().removeUnlocked(ID);
         tipList.remove(select);
         setSelect(null);
         listHeight = tipList.size()*16;

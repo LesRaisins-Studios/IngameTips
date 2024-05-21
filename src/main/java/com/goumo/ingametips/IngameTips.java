@@ -1,5 +1,6 @@
 package com.goumo.ingametips;
 
+import com.goumo.ingametips.client.resource.UnlockedTipManager;
 import com.goumo.ingametips.item.DebugItem;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.fml.common.Mod;
@@ -25,5 +26,6 @@ public class IngameTips {
     public IngameTips() {
         ITEMS.register("debug_item", DebugItem::new);
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        UnlockedTipManager.getManager();
     }
 }

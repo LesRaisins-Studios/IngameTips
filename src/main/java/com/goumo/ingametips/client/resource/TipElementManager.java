@@ -2,6 +2,7 @@ package com.goumo.ingametips.client.resource;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.TipElement;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -10,6 +11,8 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
@@ -17,8 +20,10 @@ import java.util.Map;
 
 public class TipElementManager implements ResourceManagerReloadListener {
     public static final Gson GSON = new GsonBuilder().registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
+            .registerTypeAdapter(Component.class, new Component.Serializer())
             .create();
     private final Map<ResourceLocation, TipElement> tipElements = new HashMap<>();
+    private final Map<ResourceLocation, TipElement> customTips = new HashMap<>();
 
     private static TipElementManager instance;
 
@@ -52,7 +57,7 @@ public class TipElementManager implements ResourceManagerReloadListener {
         }
     }
 
-    public static TipElement getElement(ResourceLocation rl) {
+    public static TipElement getElement(@NotNull ResourceLocation rl) {
         return getInstance().tipElements.get(rl);
     }
 
@@ -73,4 +78,33 @@ public class TipElementManager implements ResourceManagerReloadListener {
         return element;
     }
 
+    public void saveCustomTips() {
+        for(var entry : customTips.entrySet()) {
+            saveCustomTip(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void saveCustomTip(ResourceLocation rl, TipElement element) {
+        if(!element.history) return;
+        CustomTipPOJO pojo = new CustomTipPOJO();
+        pojo.contents = !element.components.isEmpty() ? element.components.get(0) : Component.empty();
+        pojo.fontColor = "0x" + Integer.toHexString(element.fontColor);
+        pojo.bgColor = "0x" + Integer.toHexString(element.bgColor);
+        pojo.alwaysVisible = element.alwaysVisible;
+        pojo.onceOnly = element.onceOnly;
+        pojo.hide = element.hide;
+        pojo.visibleTime = element.visibleTime;
+
+
+        try (FileWriter writer = new FileWriter(new File(IngameTips.TIPS, rl.getPath() + ".json"))) {
+            GSON.toJson(this, writer);
+        } catch (IOException e) {
+            e.fillInStackTrace();
+            IngameTips.LOGGER.error("Unable to save file: '{}'", IngameTips.UNLCOKED_FILE);
+        }
+    }
+
+    public void addCustomTip(TipElement ele) {
+        customTips.put(ele.id, ele);
+    }
 }

@@ -1,6 +1,7 @@
 package com.goumo.ingametips.network;
 
 import com.goumo.ingametips.IngameTips;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkRegistry;
@@ -42,7 +43,7 @@ public class Networking {
         );
     }
 
-    public static void sendCustom(ServerPlayer player,String title, String content, int visibleTime, boolean history) {
+    public static void sendCustom(ServerPlayer player, String title, Component content, int visibleTime, boolean history) {
         CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new CustomTipPacket(title, content, visibleTime, history)

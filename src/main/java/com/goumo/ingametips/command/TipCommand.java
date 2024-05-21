@@ -7,8 +7,10 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.ComponentArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -32,17 +34,15 @@ public class TipCommand {
                         }
                     ))).then(
                     Commands.literal("custom").then(
-                        Commands.argument("targets", EntityArgument.players()).then(
-                        Commands.argument("title", StringArgumentType.string()).then(
-                        Commands.argument("content", StringArgumentType.string()).then(
-                        Commands.argument("visible_time", IntegerArgumentType.integer()).then(
-                        Commands.argument("history", BoolArgumentType.bool())
-                            .executes((c) -> {
-                                String title = c.getArgument("title", String.class);
-                                String content = c.getArgument("content", String.class);
+                            Commands.argument("targets", EntityArgument.players()).then(
+                            Commands.argument("title", StringArgumentType.word()).then(
+                            Commands.argument("visible_time", IntegerArgumentType.integer()).then(
+                            Commands.argument("history", BoolArgumentType.bool()).then(
+                            Commands.argument("content", ComponentArgument.textComponent()).executes((c) -> {
+                                String title = StringArgumentType.getString(c, "title");
                                 Integer visibleTime = c.getArgument("visible_time", Integer.class);
                                 boolean history = c.getArgument("history", Boolean.class);
-
+                                Component content = ComponentArgument.getComponent(c, "content");
 
                                 int i = 0;
                                 for(ServerPlayer sp : EntityArgument.getPlayers(c, "targets")) {

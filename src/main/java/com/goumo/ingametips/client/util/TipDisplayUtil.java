@@ -2,7 +2,7 @@ package com.goumo.ingametips.client.util;
 
 import com.goumo.ingametips.client.TipElement;
 import com.goumo.ingametips.client.resource.TipElementManager;
-import com.goumo.ingametips.client.UnlockedTipManager;
+import com.goumo.ingametips.client.resource.UnlockedTipManager;
 import com.goumo.ingametips.client.gui.DebugScreen;
 import com.goumo.ingametips.client.hud.TipHUD;
 import net.minecraft.client.Minecraft;
@@ -16,7 +16,7 @@ public class TipDisplayUtil {
 
     public static void displayTip(TipElement element, boolean first) {
         if (element.id==null) return;
-        if (element.onceOnly && UnlockedTipManager.manager.isUnlocked(element.id)) return;
+        if (element.onceOnly && UnlockedTipManager.getManager().isUnlocked(element.id)) return;
 
         for (TipElement ele : TipHUD.renderQueue) {
             if (ele.id.equals(element.id)) {
@@ -26,9 +26,9 @@ public class TipDisplayUtil {
 
         if (element.history) {
             if (element.id.getNamespace().equals("ingametips_custom")) {
-                UnlockedTipManager.manager.unlockCustom(element);
+                UnlockedTipManager.getManager().unlockCustom(element);
             } else {
-                UnlockedTipManager.manager.unlock(element.id, element.hide);
+                UnlockedTipManager.getManager().unlock(element);
             }
         }
 
@@ -39,15 +39,12 @@ public class TipDisplayUtil {
         }
     }
 
-    public static void displayCustomTip(String title, String content, int visibleTime, boolean history) {
+    public static void displayCustomTip(String title, Component content, int visibleTime, boolean history) {
         TipElement ele = new TipElement();
         ele.id = ResourceLocation.tryParse("ingametips_custom:" + title);
         ele.history = history;
         ele.components.add(Component.literal(title));
-        String[] contents = content.split("\\$");
-        for (String s : contents) {
-            ele.components.add(Component.literal(s));
-        }
+        ele.components.add(content);
 
         if (visibleTime == -1) {
             ele.alwaysVisible = true;
@@ -55,6 +52,7 @@ public class TipDisplayUtil {
             ele.visibleTime = visibleTime;
         }
 
+        TipElementManager.getInstance().addCustomTip(ele);
         displayTip(ele, false);
     }
 
@@ -82,7 +80,7 @@ public class TipDisplayUtil {
                     TipHUD.renderQueue.set(i, clone);
                     break;
                 } catch (CloneNotSupportedException e) {
-                    e.printStackTrace();
+                    e.fillInStackTrace();
                     break;
                 }
             }

@@ -1,10 +1,9 @@
 package com.goumo.ingametips.client.resource;
 
-import java.util.ArrayList;
-import java.util.List;
+import net.minecraft.network.chat.Component;
 
-public class TipElementPOJO {
-    public List<String> contents = new ArrayList<>();
+public class CustomTipPOJO {
+    public Component contents = Component.empty();
     public boolean alwaysVisible = false;
     public boolean onceOnly = false;
     public boolean hide = false;
@@ -13,8 +12,6 @@ public class TipElementPOJO {
     public String fontColor = "0xFFC6FCFF";
     public String bgColor = "0xFF000000";
 
-    public TipElementPOJO() {
+    public CustomTipPOJO() {
     }
-
-
 }
