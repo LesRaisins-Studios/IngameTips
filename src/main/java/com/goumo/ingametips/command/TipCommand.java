@@ -5,6 +5,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ComponentArgument;
@@ -35,23 +37,27 @@ public class TipCommand {
                     ))).then(
                     Commands.literal("custom").then(
                             Commands.argument("targets", EntityArgument.players()).then(
-                            Commands.argument("title", StringArgumentType.word()).then(
+                            Commands.argument("id", StringArgumentType.word()).then(
                             Commands.argument("visible_time", IntegerArgumentType.integer()).then(
                             Commands.argument("history", BoolArgumentType.bool()).then(
-                            Commands.argument("content", ComponentArgument.textComponent()).executes((c) -> {
-                                String title = StringArgumentType.getString(c, "title");
-                                Integer visibleTime = c.getArgument("visible_time", Integer.class);
-                                boolean history = c.getArgument("history", Boolean.class);
-                                Component content = ComponentArgument.getComponent(c, "content");
+                            Commands.argument("title", StringArgumentType.string()).then(
+                            Commands.argument("content", ComponentArgument.textComponent()).executes(TipCommand::sendCustom)))))
+                )))));
+    }
 
-                                int i = 0;
-                                for(ServerPlayer sp : EntityArgument.getPlayers(c, "targets")) {
-                                    Networking.sendCustom(sp, title, content, visibleTime, history);
-                                    i++;
-                                }
+    private static int sendCustom(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        String id = StringArgumentType.getString(ctx, "id");
+        int visibleTime = IntegerArgumentType.getInteger(ctx, "visible_time");
+        boolean history = BoolArgumentType.getBool(ctx, "history");
+        Component title = Component.literal(StringArgumentType.getString(ctx, "title"));
+        Component content = ComponentArgument.getComponent(ctx, "content");
 
-                                return i;
-                            }
-        )))))))));
+        int i = 0;
+        for(ServerPlayer sp : EntityArgument.getPlayers(ctx, "targets")) {
+            Networking.sendCustom(sp, id, title, content, visibleTime);
+            i++;
+        }
+
+        return i;
     }
 }

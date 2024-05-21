@@ -46,10 +46,10 @@ public class TipDisplayUtil {
         }
     }
 
-    public static void displayCustomTip(String title, Component content, int visibleTime, boolean history) {
+    public static void displayCustomTip(String id, Component title, Component content, int visibleTime) {
         TipElement ele = new TipElement();
-        ele.id = new ResourceLocation(IngameTips.MOD_ID, title);
-        ele.components.add(Component.literal(title));
+        ele.id = new ResourceLocation(IngameTips.MOD_ID, id);
+        ele.components.add(title);
         ele.components.add(content);
 
         if (visibleTime == -1) {
