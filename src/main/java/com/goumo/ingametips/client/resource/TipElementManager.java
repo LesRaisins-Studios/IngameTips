@@ -21,6 +21,7 @@ import java.util.Map;
 public class TipElementManager implements ResourceManagerReloadListener {
     public static final Gson GSON = new GsonBuilder().registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
             .registerTypeAdapter(Component.class, new Component.Serializer())
+            .setPrettyPrinting()
             .create();
     private final Map<ResourceLocation, TipElement> tipElements = new HashMap<>();
     private final Map<ResourceLocation, TipElement> customTips = new HashMap<>();
@@ -30,6 +31,7 @@ public class TipElementManager implements ResourceManagerReloadListener {
     public static TipElementManager getInstance() {
         if (instance == null) {
             instance = new TipElementManager();
+            instance.loadCustomFromFile();
         }
         return instance;
     }
@@ -58,15 +60,13 @@ public class TipElementManager implements ResourceManagerReloadListener {
     }
 
     public static TipElement getElement(@NotNull ResourceLocation rl) {
-        return getInstance().tipElements.get(rl);
+        return getInstance().tipElements.getOrDefault(rl, getInstance().customTips.get(rl));
     }
 
     public TipElement parse(@NotNull ResourceLocation rl, TipElementPOJO pojo) {
         TipElement element = new TipElement();
         element.id = rl;
-        for(var content : pojo.contents) {
-            element.components.add(Component.translatable(content));
-        }
+        element.components.addAll(pojo.contents);
         element.fontColor = Integer.parseUnsignedInt(pojo.fontColor.startsWith("0x") ? pojo.fontColor.substring(2) : pojo.fontColor, 16);
         element.bgColor = Integer.parseUnsignedInt(pojo.bgColor.startsWith("0x") ? pojo.bgColor.substring(2) : pojo.bgColor, 16);
         element.alwaysVisible = pojo.alwaysVisible;
@@ -84,10 +84,10 @@ public class TipElementManager implements ResourceManagerReloadListener {
         }
     }
 
-    private void saveCustomTip(ResourceLocation rl, TipElement element) {
+    public void saveCustomTip(ResourceLocation rl, TipElement element) {
         if(!element.history) return;
-        CustomTipPOJO pojo = new CustomTipPOJO();
-        pojo.contents = !element.components.isEmpty() ? element.components.get(0) : Component.empty();
+        TipElementPOJO pojo = new TipElementPOJO();
+        pojo.contents.addAll(element.components);
         pojo.fontColor = "0x" + Integer.toHexString(element.fontColor);
         pojo.bgColor = "0x" + Integer.toHexString(element.bgColor);
         pojo.alwaysVisible = element.alwaysVisible;
@@ -97,7 +97,7 @@ public class TipElementManager implements ResourceManagerReloadListener {
 
 
         try (FileWriter writer = new FileWriter(new File(IngameTips.TIPS, rl.getPath() + ".json"))) {
-            GSON.toJson(this, writer);
+            GSON.toJson(pojo, writer);
         } catch (IOException e) {
             e.fillInStackTrace();
             IngameTips.LOGGER.error("Unable to save file: '{}'", IngameTips.UNLCOKED_FILE);
@@ -106,5 +106,26 @@ public class TipElementManager implements ResourceManagerReloadListener {
 
     public void addCustomTip(TipElement ele) {
         customTips.put(ele.id, ele);
+    }
+
+    public void loadCustomFromFile() {
+        customTips.clear();
+        if (IngameTips.TIPS.mkdirs()) {
+            IngameTips.LOGGER.info("Config path created");
+        }
+        File[] files = IngameTips.TIPS.listFiles((dir, name) -> name.endsWith(".json"));
+        if (files != null) {
+            for (File file : files) {
+                try(Reader stream = new java.io.FileReader(file)){
+                    ResourceLocation path = new ResourceLocation(IngameTips.MOD_ID, file.getName().substring(0, file.getName().length() - 5));
+                    TipElementPOJO pojo = GSON.fromJson(stream, TipElementPOJO.class);
+                    TipElement element = parse(path, pojo);
+                    customTips.put(path, element);
+                } catch (IOException e) {
+                    e.fillInStackTrace();
+                    IngameTips.LOGGER.error("Unable to load file: '{}'", IngameTips.UNLCOKED_FILE);
+                }
+            }
+        }
     }
 }

@@ -229,8 +229,8 @@ public class TipListScreen extends Screen {
         double scale = minecraft.getWindow().getGuiScale();
 
         PoseStack ps = graphics.pose();
-
         ps.pushPose();
+
         if (font.width(selectEle.components.get(0).getString()) > x-32 - boxWidth) {
             ps.translate(0, displayTextScroll, 0);
             RenderSystem.enableScissor(0, (int)((int)(height*0.1F+4)*scale), (int)(width*scale), (int)((GuiHeight -8)*scale));
@@ -255,6 +255,7 @@ public class TipListScreen extends Screen {
         } else {
             graphics.drawString(font, selectEle.components.get(0), boxWidth + 4, y - 12, textColor);
         }
+
         RenderSystem.disableScissor();
         ps.popPose();
 

@@ -1,6 +1,7 @@
 package com.goumo.ingametips.client.resource;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.TipElement;
@@ -18,11 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UnlockedTipManager {
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger LOGGER = LogManager.getLogger();
     private List<ResourceLocation> visible;
     private List<ResourceLocation> hide;
-    private List<ResourceLocation> custom;
     private static UnlockedTipManager manager;
     public static String error = "";
 
@@ -41,10 +41,6 @@ public class UnlockedTipManager {
         reset();
     }
 
-    public static void setManager(UnlockedTipManager manager) {
-        UnlockedTipManager.manager = manager;
-    }
-
     public void loadFromFile() {
         if (!IngameTips.UNLCOKED_FILE.exists()) {
             createFile();
@@ -56,7 +52,6 @@ public class UnlockedTipManager {
             UnlockedTipManager fileManager = GSON.fromJson(reader, UnlockedTipManager.class);
             this.visible = fileManager.visible;
             this.hide = fileManager.hide;
-            this.custom = fileManager.custom;
 
         } catch (IOException | JsonSyntaxException e) {
             e.fillInStackTrace();
@@ -104,10 +99,6 @@ public class UnlockedTipManager {
         return hide;
     }
 
-    public List<ResourceLocation> getCustom() {
-        return custom;
-    }
-
     public void unlock(TipElement element) {
         if (isUnlocked(element.id)) return;
         if (element.hide) {
@@ -118,26 +109,19 @@ public class UnlockedTipManager {
         saveToFile();
     }
 
-    public void unlockCustom(TipElement element) {
-        this.custom.add(element.id);
-        saveToFile();
-    }
-
     public void removeUnlocked(ResourceLocation ID) {
         this.visible.remove(ID);
         this.hide.remove(ID);
-        this.custom.remove(ID);
         saveToFile();
     }
 
     public boolean isUnlocked(ResourceLocation ID) {
-        return visible.contains(ID) || hide.contains(ID) || custom.contains(ID);
+        return visible.contains(ID) || hide.contains(ID);
     }
 
     public void reset() {
         this.visible = new ArrayList<>();
         this.hide = new ArrayList<>();
-        this.custom = new ArrayList<>();
     }
 
 

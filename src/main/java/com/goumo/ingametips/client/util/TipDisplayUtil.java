@@ -1,5 +1,6 @@
 package com.goumo.ingametips.client.util;
 
+import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.TipElement;
 import com.goumo.ingametips.client.resource.TipElementManager;
 import com.goumo.ingametips.client.resource.UnlockedTipManager;
@@ -8,13 +9,25 @@ import com.goumo.ingametips.client.hud.TipHUD;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TipDisplayUtil {
+    /** Display a tip with the given resource location.
+     * @param rl The resource location of the tip.
+     * @param first Whether the tip should be added to the front of the queue.
+     * */
     public static void displayTip(ResourceLocation rl, boolean first) {
-        displayTip(TipElementManager.getElement(rl), first);
+        TipElement element = TipElementManager.getElement(rl);
+        if(element == null) {
+            element = new TipElement();
+            element.replaceToError(rl, "not_exists");
+        }
+
+        displayTip(element, first);
     }
 
-    public static void displayTip(TipElement element, boolean first) {
+    public static void displayTip(@NotNull TipElement element, boolean first) {
         if (element.id==null) return;
         if (element.onceOnly && UnlockedTipManager.getManager().isUnlocked(element.id)) return;
 
@@ -25,11 +38,7 @@ public class TipDisplayUtil {
         }
 
         if (element.history) {
-            if (element.id.getNamespace().equals("ingametips_custom")) {
-                UnlockedTipManager.getManager().unlockCustom(element);
-            } else {
-                UnlockedTipManager.getManager().unlock(element);
-            }
+            UnlockedTipManager.getManager().unlock(element);
         }
 
         if (first) {
@@ -41,7 +50,7 @@ public class TipDisplayUtil {
 
     public static void displayCustomTip(String title, Component content, int visibleTime, boolean history) {
         TipElement ele = new TipElement();
-        ele.id = ResourceLocation.tryParse("ingametips_custom:" + title);
+        ele.id = new ResourceLocation(IngameTips.MOD_ID, title);
         ele.history = history;
         ele.components.add(Component.literal(title));
         ele.components.add(content);
@@ -53,6 +62,7 @@ public class TipDisplayUtil {
         }
 
         TipElementManager.getInstance().addCustomTip(ele);
+        TipElementManager.getInstance().saveCustomTip(ele.id, ele);
         displayTip(ele, false);
     }
 

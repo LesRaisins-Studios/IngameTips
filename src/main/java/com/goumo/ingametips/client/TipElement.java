@@ -29,11 +29,21 @@ public class TipElement implements Cloneable {
     public TipElement(ResourceLocation id) {
         this.id = id;
     }
-
     public void replaceToError(File filePath, String type) {
+        replaceToError(type, filePath.getPath());
+    }
+
+    public void replaceToError(ResourceLocation rl, String type) {
+        replaceToError(type, rl.toString());
+    }
+
+    private void replaceToError(String type, String path) {
+        id = new ResourceLocation(IngameTips.MOD_ID, "error");
         components = new ArrayList<>();
         components.add(Component.translatable("tip." + IngameTips.MOD_ID + ".error." + type));
-        components.add(Component.literal(filePath.getPath()));
+        components.add(Component.literal(path));
+        components.add(Component.translatable("tip.ingametips.error.desc"));
+
         fontColor = 0xFFFF5340;
         bgColor = 0xFF000000;
         alwaysVisible = true;
@@ -41,8 +51,10 @@ public class TipElement implements Cloneable {
         hide = true;
     }
 
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
+
 }
