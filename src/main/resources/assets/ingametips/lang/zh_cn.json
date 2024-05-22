@@ -14,5 +14,7 @@
   "tip.gui.clear_queue": "清空提示显示队列",
   "tip.gui.reset_unlock": "重置已解锁的提示",
 
-  "tip.ingametips.empty.title": "哇，这里什么都没有"
+  "tip.ingametips.empty.title": "哇，这里什么都没有",
+  "tip.gui.locked": "未解锁的条目",
+  "tip.gui.locked.content": "该条目尚未解锁，请继续探索以解锁它"
 }

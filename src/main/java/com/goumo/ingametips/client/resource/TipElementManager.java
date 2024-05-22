@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.TipElement;
+import com.goumo.ingametips.client.resource.pojo.TipElementPOJO;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -16,7 +17,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TipElementManager implements ResourceManagerReloadListener {
@@ -24,6 +27,8 @@ public class TipElementManager implements ResourceManagerReloadListener {
             .registerTypeAdapter(Component.class, new Component.Serializer())
             .setPrettyPrinting()
             .create();
+    public static final Component UNLOCKED_TITLE = Component.translatable("tip.gui.locked");
+    public static final Component UNLOCKED_CONTENT = Component.translatable("tip.gui.locked.content");
     private final Map<ResourceLocation, TipElement> tipElements = new HashMap<>();
     private final Map<ResourceLocation, TipElement> customTips = new HashMap<>();
 
@@ -60,6 +65,13 @@ public class TipElementManager implements ResourceManagerReloadListener {
         }
     }
 
+    public List<ResourceLocation> getAllTipIds() {
+        List<ResourceLocation> ids = new ArrayList<>();
+        ids.addAll(tipElements.keySet());
+        ids.addAll(customTips.keySet());
+        return ids;
+    }
+
     @Nullable
     public static TipElement getElement(@NotNull ResourceLocation rl) {
         return getInstance().tipElements.getOrDefault(rl, getInstance().customTips.get(rl));
@@ -75,6 +87,8 @@ public class TipElementManager implements ResourceManagerReloadListener {
         element.onceOnly = pojo.onceOnly;
         element.hide = pojo.hide;
         element.visibleTime = Math.max(pojo.visibleTime, 0);
+        element.unlockText = pojo.unlockText;
+        element.unlockHint = pojo.unlockHint;
 
         return element;
     }

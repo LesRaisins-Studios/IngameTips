@@ -1,9 +1,9 @@
 package com.goumo.ingametips.client.gui;
 
 import com.goumo.ingametips.client.TipElement;
+import com.goumo.ingametips.client.gui.widget.IconButton;
 import com.goumo.ingametips.client.resource.TipElementManager;
 import com.goumo.ingametips.client.resource.UnlockedTipManager;
-import com.goumo.ingametips.client.gui.widget.IconButton;
 import com.goumo.ingametips.client.util.AnimationUtil;
 import com.goumo.ingametips.client.util.GuiUtil;
 import com.goumo.ingametips.client.util.TipDisplayUtil;
@@ -18,16 +18,13 @@ import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import static com.goumo.ingametips.client.gui.widget.IconButton.ICON_LOCATION;
 
 
 public class TipListScreen extends Screen {
     private final boolean background;
-    private final Map<ResourceLocation, List<String>> customTipList = new HashMap<>();
-
     private List<ResourceLocation> tipList;
     private TipElement selectEle = null;
     private int GuiHeight = 0;
@@ -54,14 +51,13 @@ public class TipListScreen extends Screen {
             onClose();
         }));
         this.addRenderableWidget(new IconButton(0, 0, IconButton.ICON_LOCK, 0xFFC6FCFF, Component.translatable("tip.gui.pin"), (button) -> {
+            if(selectEle==null || !UnlockedTipManager.getManager().isUnlocked(selectEle.id)){
+                return;
+            }
             TipDisplayUtil.forceAdd(selectEle, true);
         }));
 
-        tipList = new ArrayList<>(UnlockedTipManager.getManager().getVisible());
-//        UnlockedTipManager.manager.getCustom().forEach((c) -> {
-//            customTipList.put(c.get(0), c);
-//            tipList.add(c.get(0));
-//        });
+        tipList = TipElementManager.getInstance().getAllTipIds();
 
         if (!tipList.contains(select)) {
             select = null;
@@ -139,6 +135,15 @@ public class TipListScreen extends Screen {
                 //超出绘制区域
                 continue;
             }
+
+            ResourceLocation rl = list.get(i);
+            TipElement ele = TipElementManager.getElement(rl);
+            boolean unlocked = UnlockedTipManager.getManager().isUnlocked(rl);
+            // 没有这玩意/没有内容/隐藏并且未解锁
+            if(ele == null || ele.components.isEmpty() || ele.hide && !unlocked) {
+                continue;
+            }
+
             int BGWidth = (int)(width*0.3);
             float progress = 0;
 
@@ -183,6 +188,7 @@ public class TipListScreen extends Screen {
 
                 ps.pushPose();
                 ps.translate(x*progress + selOffset-BGOutline, y-BGOutline + i*16, 0);
+
                 if (list.get(i).equals(select)) {
                     float selColorP = AnimationUtil.calcFadeIn(200, "TipListSelColor", false);
                     int selColor = Mth.clamp((int)(selColorP * BGAlpha), 0x04, 0xFF) << 24 | 0xFFC6FCFF & 0x00FFFFFF;
@@ -192,31 +198,46 @@ public class TipListScreen extends Screen {
                 }
                 graphics.fill(BGOutline, BGOutline, BGOutline+1, BGOutline + 10-BGOutline, fontColor);
 
-                ResourceLocation rl = list.get(i);
-
-                TipElement ele = TipElementManager.getElement(rl);
-
-                if(ele == null || ele.components.isEmpty()) {
-                    continue;
+                Component component;
+                if(unlocked){
+                    component = ele.components.get(0);
+                } else {
+                    component = TipElementManager.UNLOCKED_TITLE;
+                    renderLockIcon(graphics, 0xFFC6FCFF);
+                    ps.translate(10, 0, 0);
                 }
 
-                Component component = ele.components.get(0);
+                String text = component.getString();
 
-//                if (font.width(component) > BGWidth) {
-//                    String s = component.getString().substring(0, Math.min(component.getString().length(), BGWidth / 6)) + "...";
-//                }
+                if (font.width(text) > BGWidth) {
+                    text = text.substring(0, Math.min(text.length(), BGWidth / 6)) + "...";
+                }
 
-                if (list.get(i).equals(select)) {
-                    graphics.drawString(font, component, 0, 0, fontColor);
+                if (rl.equals(select)) {
+                    graphics.drawString(font, text, 0, 0, fontColor);
                 } else {
-                    graphics.drawString(font, component, 0, 0, fontColor, false);
+                    graphics.drawString(font, text, 0, 0, fontColor, false);
                 }
                 ps.popPose();
             }
         }
     }
 
-    private void renderTipContent(GuiGraphics graphics, int x, int y) { //TODO 搜索和分组
+    private void renderLockIcon(GuiGraphics graphics, int color) {
+        float r = (color >> 16 & 0xFF) / 255F;
+        float g = (color >> 8 & 0xFF) / 255F;
+        float b = (color & 0xFF) / 255F;
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(r, g, b, 1);
+        graphics.blit(ICON_LOCATION, -2, -2, 10, 10, 10, 10, 80, 80);
+        RenderSystem.setShaderColor(1,1,1,1);
+        RenderSystem.disableBlend();
+    }
+
+    private void renderTipContent(GuiGraphics graphics, int x, int y) {
+        //TODO 搜索和分组
 //        boolean custom = select.startsWith("*custom*");
         if (selectEle == null || !selectEle.id.equals(select)) {
             selectEle = TipElementManager.getElement(select);
@@ -240,7 +261,13 @@ public class TipListScreen extends Screen {
         PoseStack ps = graphics.pose();
         ps.pushPose();
 
-        if (font.width(selectEle.components.get(0).getString()) > x-32 - boxWidth) {
+        if (!UnlockedTipManager.getManager().isUnlocked(selectEle.id)) {
+            graphics.drawString(font, selectEle.unlockText, boxWidth + 4, y - 12, textColor);
+            int line = 0;
+            line += 1 +GuiUtil.formatAndDraw(selectEle.unlockHint, graphics, font, boxWidth + 4, y+4,
+                    x-8 - boxWidth, textColor, 12, false);
+            textHeight = line*12;
+        } else if (font.width(selectEle.components.get(0).getString()) > x-32 - boxWidth) {
             ps.translate(0, displayTextScroll, 0);
             RenderSystem.enableScissor(0, (int)((int)(height*0.1F+4)*scale), (int)(width*scale), (int)((GuiHeight -8)*scale));
             int line = 0;

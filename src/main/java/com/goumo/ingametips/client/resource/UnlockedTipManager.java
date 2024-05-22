@@ -21,8 +21,7 @@ import java.util.List;
 public class UnlockedTipManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger LOGGER = LogManager.getLogger();
-    private List<ResourceLocation> visible;
-    private List<ResourceLocation> hide;
+    private List<ResourceLocation> unlocked;
     private static UnlockedTipManager manager;
     public static String error = "";
 
@@ -50,8 +49,7 @@ public class UnlockedTipManager {
         LOGGER.debug("Loading unlocked tips");
         try (FileReader reader = new FileReader(IngameTips.UNLCOKED_FILE)) {
             UnlockedTipManager fileManager = GSON.fromJson(reader, UnlockedTipManager.class);
-            this.visible = fileManager.visible;
-            this.hide = fileManager.hide;
+            this.unlocked = fileManager.unlocked;
 
         } catch (IOException | JsonSyntaxException e) {
             e.fillInStackTrace();
@@ -91,38 +89,28 @@ public class UnlockedTipManager {
         }
     }
 
-    public List<ResourceLocation> getVisible() {
-        return visible;
+    public List<ResourceLocation> getUnlocked() {
+        return unlocked;
     }
 
-    public List<ResourceLocation> getHide() {
-        return hide;
-    }
 
     public void unlock(TipElement element) {
         if (isUnlocked(element.id)) return;
-        if (element.hide) {
-            this.hide.add(element.id);
-        } else {
-            this.visible.add(element.id);
-        }
+        this.unlocked.add(element.id);
         saveToFile();
     }
 
     public void removeUnlocked(ResourceLocation ID) {
-        this.visible.remove(ID);
-        this.hide.remove(ID);
+        this.unlocked.remove(ID);
         saveToFile();
     }
 
     public boolean isUnlocked(ResourceLocation ID) {
-        return visible.contains(ID) || hide.contains(ID);
+        return unlocked.contains(ID);
     }
 
     public void reset() {
-        this.visible = new ArrayList<>();
-        this.hide = new ArrayList<>();
+        this.unlocked = new ArrayList<>();
     }
-
 
 }

@@ -43,10 +43,10 @@ public class Networking {
         );
     }
 
-    public static void sendCustom(ServerPlayer player, String id, Component title, Component content, int visibleTime) {
+    public static void sendCustom(ServerPlayer player, String id, Component title, Component content, int visibleTime, boolean history) {
         CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new CustomTipPacket(id, title, content, visibleTime)
+                new CustomTipPacket(id, title, content, visibleTime, history)
         );
     }
 }

@@ -14,5 +14,7 @@
   "tip.gui.clear_queue": "Clear tip render queue",
   "tip.gui.reset_unlock": "Reset unlocked tip",
 
-  "tip.ingametips.empty.title": "Wow, there's nothing here"
+  "tip.ingametips.empty.title": "Wow, there's nothing here",
+  "tip.gui.locked": "Locked Entry",
+  "tip.gui.locked.content": "This Entry is locked. Explore to unlock it."
 }

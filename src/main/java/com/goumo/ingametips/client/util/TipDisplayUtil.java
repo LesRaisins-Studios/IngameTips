@@ -2,15 +2,14 @@ package com.goumo.ingametips.client.util;
 
 import com.goumo.ingametips.IngameTips;
 import com.goumo.ingametips.client.TipElement;
-import com.goumo.ingametips.client.resource.TipElementManager;
-import com.goumo.ingametips.client.resource.UnlockedTipManager;
 import com.goumo.ingametips.client.gui.DebugScreen;
 import com.goumo.ingametips.client.hud.TipHUD;
+import com.goumo.ingametips.client.resource.TipElementManager;
+import com.goumo.ingametips.client.resource.UnlockedTipManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class TipDisplayUtil {
     /** Display a tip with the given resource location.
@@ -46,7 +45,7 @@ public class TipDisplayUtil {
         }
     }
 
-    public static void displayCustomTip(String id, Component title, Component content, int visibleTime) {
+    public static void displayCustomTip(String id, Component title, Component content, int visibleTime, boolean history) {
         TipElement ele = new TipElement();
         ele.id = new ResourceLocation(IngameTips.MOD_ID, id);
         ele.components.add(title);
@@ -57,9 +56,11 @@ public class TipDisplayUtil {
         } else {
             ele.visibleTime = visibleTime;
         }
+        if(history) {
+            TipElementManager.getInstance().addCustomTip(ele);
+            TipElementManager.getInstance().saveCustomTip(ele.id, ele);
+        }
 
-        TipElementManager.getInstance().addCustomTip(ele);
-        TipElementManager.getInstance().saveCustomTip(ele.id, ele);
         displayTip(ele, false);
     }
 

@@ -1,6 +1,7 @@
 package com.goumo.ingametips.client;
 
 import com.goumo.ingametips.IngameTips;
+import com.goumo.ingametips.client.resource.TipElementManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -17,6 +18,9 @@ public class TipElement implements Cloneable {
     public int visibleTime = 30000;
     public int fontColor = 0xFFC6FCFF;
     public int bgColor = 0xFF000000;
+    public Component unlockText = TipElementManager.UNLOCKED_TITLE;
+    // 未解锁的tip的提示
+    public Component unlockHint = TipElementManager.UNLOCKED_CONTENT;
 
     public TipElement() {
     }
